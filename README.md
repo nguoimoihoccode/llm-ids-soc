@@ -88,18 +88,6 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Backend default URL:
-
-```text
-http://localhost:8000
-```
-
-Health check:
-
-```bash
-curl http://localhost:8000/health
-```
-
 ### 2. Start the Frontend
 
 Open a second terminal:
