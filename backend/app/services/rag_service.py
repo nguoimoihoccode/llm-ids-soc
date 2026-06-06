@@ -1,0 +1,12 @@
+from pathlib import Path
+
+
+PLAYBOOK_DIR = Path(__file__).resolve().parents[3] / "knowledge_base" / "playbooks"
+
+
+def retrieve_context(attack_type: str) -> str:
+    filename = attack_type.lower().replace(" ", "-") + ".md"
+    path = PLAYBOOK_DIR / filename
+    if not path.exists():
+        return "No local playbook found. Use only the alert fields."
+    return path.read_text(encoding="utf-8")
