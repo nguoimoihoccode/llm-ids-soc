@@ -87,6 +87,7 @@ const sampleAlerts: Alert[] = [
 ];
 
 function App() {
+  // Frontend uu tien du lieu that tu backend, neu loi thi dung sample fallback.
   const [alerts, setAlerts] = useState<Alert[]>(sampleAlerts);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [explanation, setExplanation] = useState<Explanation | null>(null);
@@ -97,6 +98,7 @@ function App() {
   useEffect(() => {
     async function loadDashboard() {
       try {
+        // Lay dong thoi alert, evaluation va metric de dashboard co du lieu day du.
         const [alertsResponse, evaluationResponse, metricsResponse] = await Promise.all([
           fetch("http://localhost:8000/alerts"),
           fetch("http://localhost:8000/ml/evaluate"),
@@ -110,6 +112,7 @@ function App() {
         setModelMetrics(nextModelMetrics);
 
         if (nextAlerts[0]) {
+          // Chi can mot alert dau tien de minh hoa phan giai thich va comparison.
           const explanationResponse = await fetch(
             `http://localhost:8000/alerts/${nextAlerts[0].alert_id}/explanation`,
           );
@@ -120,6 +123,7 @@ function App() {
           setComparison((await comparisonResponse.json()) as ExplanationComparison);
         }
       } catch {
+        // Neu backend chua chay, hien du lieu mau de giao dien van demo duoc.
         setEvaluation({
           model_name: "RuleBasedBaseline",
           sample_count: 5,
@@ -230,6 +234,7 @@ function App() {
 }
 
 function formatPercent(value: number) {
+  // Convert so 0-1 thanh phan tram de doc de hon tren UI.
   return `${Math.round(value * 100)}%`;
 }
 

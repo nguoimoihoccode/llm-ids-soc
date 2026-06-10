@@ -23,28 +23,92 @@ The thesis focus is not to let an LLM decide whether traffic is malicious. The I
 - Compare explanation modes: template, no-RAG, and RAG-assisted explanations.
 - Export LLM rubric scores, RAG summaries, and incident case study reports for thesis evaluation.
 
-## Architecture
+## Architecture Overview
 
-```text
-Network-flow data / sample CSV
-        |
-        v
-Preprocessing and feature preparation
-        |
-        v
-IDS detection and ML evaluation layer
-        |
-        v
-Alert enrichment: severity, confidence, top features, MITRE mapping, priority
-        |
-        v
-LLM/RAG explanation layer using local security playbooks
-        |
-        v
-FastAPI backend API + React SOC dashboard + thesis report exports
+The system is designed as a clear SOC-style pipeline: **ML/IDS detects suspicious activity, while RAG/LLM explains the alert and supports analyst triage**.
+
+```mermaid
+flowchart LR
+    subgraph D[Data Sources]
+        A1[Sample Network Events]
+        A2[UNSW-NB15 Style CSV]
+        A3[CICIDS2017 Planned Benchmark]
+    end
+
+    subgraph P[Preprocessing And Feature Engineering]
+        B1[CSV Loading]
+        B2[Missing And Infinite Value Handling]
+        B3[Categorical Encoding]
+        B4[Processed Feature Matrix]
+    end
+
+    subgraph M[IDS And Machine Learning Layer]
+        C1[Rule-Based Demo Detector]
+        C2[Logistic Regression]
+        C3[Decision Tree]
+        C4[Random Forest]
+        C5[Metrics And Confusion Matrices]
+    end
+
+    subgraph I[Alert Intelligence Layer]
+        D1[Security Alert]
+        D2[Severity And Confidence]
+        D3[Top Evidence Features]
+        D4[MITRE ATT&CK Mapping]
+        D5[Triage Priority]
+    end
+
+    subgraph K[Knowledge And RAG Layer]
+        E1[Local Security Playbooks]
+        E2[Relevant Context Retrieval]
+    end
+
+    subgraph L[LLM Explanation Layer]
+        F1[Template Explanation]
+        F2[LLM Without RAG]
+        F3[LLM With RAG]
+        F4[Grounded Response Guidance]
+    end
+
+    subgraph O[SOC Outputs]
+        G1[FastAPI Backend]
+        G2[React SOC Dashboard]
+        G3[Model Comparison CSV]
+        G4[Feature Importance Reports]
+        G5[LLM Rubric Scores]
+        G6[Incident Case Studies]
+    end
+
+    A1 --> P
+    A2 --> P
+    A3 -. future .-> P
+    P --> M
+    M --> I
+    I --> L
+    E1 --> E2 --> L
+    L --> O
+    M --> G3
+    M --> G4
+    L --> G5
+    I --> G6
+    G1 --> G2
+
+    classDef data fill:#0f172a,stroke:#38bdf8,color:#e0f2fe
+    classDef process fill:#1e1b4b,stroke:#818cf8,color:#eef2ff
+    classDef ml fill:#052e16,stroke:#22c55e,color:#dcfce7
+    classDef alert fill:#451a03,stroke:#f59e0b,color:#fffbeb
+    classDef rag fill:#3b0764,stroke:#c084fc,color:#faf5ff
+    classDef output fill:#111827,stroke:#f472b6,color:#fdf2f8
+
+    class A1,A2,A3 data
+    class B1,B2,B3,B4 process
+    class C1,C2,C3,C4,C5 ml
+    class D1,D2,D3,D4,D5 alert
+    class E1,E2,F1,F2,F3,F4 rag
+    class G1,G2,G3,G4,G5,G6 output
 ```
 
-Main components:
+### Component Map
 
 - **Backend**: FastAPI service that exposes events, alerts, explanations, datasets, and metrics.
 - **Frontend**: React + Vite dashboard for viewing alerts, model metrics, and explanation comparisons.
@@ -140,6 +204,44 @@ http://localhost:8000/docs
 
 Run these commands from the repository root unless noted otherwise.
 
+### Run End-To-End Dataset Pipeline
+
+```bash
+backend/.venv/bin/python scripts/run_dataset_pipeline.py \
+  --dataset-id fixture-pipeline \
+  --input data/samples/unsw_nb15_fixture.csv \
+  --output-dir reports/pipeline/fixture-pipeline \
+  --models decision_tree \
+  --test-size 0.33 \
+  --random-state 42
+```
+
+This runs the research workflow in one command: profile dataset, split train/test, preprocess both splits, train models, evaluate on the test split, and export artifacts under the selected output directory. It also writes `pipeline-report.md`, a thesis-ready summary of dataset profile, split setup, model metrics, and generated artifact paths, plus `reports/model-comparison.csv`, confusion matrix SVG figures, and tree-model feature importance CSV files compatible with the standard evaluation workflow.
+
+### Profile An IDS Dataset CSV
+
+```bash
+backend/.venv/bin/python scripts/profile_dataset.py \
+  --input data/samples/unsw_nb15_fixture.csv \
+  --output reports/evaluation/dataset-summary.json
+```
+
+This creates a JSON summary with row count, column count, labels, attack categories, class percentages, imbalance ratios, missing values, and column names. Use this before preprocessing a full benchmark dataset.
+
+### Split An IDS Dataset CSV
+
+```bash
+backend/.venv/bin/python scripts/split_dataset.py \
+  --input data/samples/unsw_nb15_fixture.csv \
+  --train-output data/processed/unsw_nb15_fixture_train.csv \
+  --test-output data/processed/unsw_nb15_fixture_test.csv \
+  --summary-output reports/evaluation/dataset-split-summary.json \
+  --test-size 0.33 \
+  --random-state 42
+```
+
+This creates train/test CSV files and a split summary containing row counts, split strategy, stratification status, and label distribution for each split. If stratified splitting is not possible because the dataset is too small or a class has too few samples, the script falls back to a non-stratified split and records that in the summary.
+
 ### Preprocess UNSW-NB15 Fixture Data
 
 ```bash
@@ -157,6 +259,19 @@ backend/.venv/bin/python scripts/train_models.py \
   --metrics-dir models/metrics \
   --models-dir models/trained
 ```
+
+### Train Baseline Models With Explicit Train/Test Files
+
+```bash
+backend/.venv/bin/python scripts/train_models.py \
+  --dataset-id fixture-split \
+  --train-input data/processed/unsw_nb15_fixture_train.csv \
+  --test-input data/processed/unsw_nb15_fixture_test.csv \
+  --metrics-dir models/metrics \
+  --models-dir models/trained
+```
+
+Use this mode for thesis-grade experiments because metrics are calculated on the explicit test split rather than the same CSV used for training.
 
 ### Export Model Comparison CSV
 
@@ -228,6 +343,24 @@ LLM/RAG explanation evaluation is designed around a rubric:
 - Latency: response time is acceptable for analyst workflow.
 
 See `docs/evaluation-plan.md` for more detail.
+
+## Defense Materials
+
+- Demo script: `docs/demo-script.md`.
+- Defense Q&A notes: `docs/defense-qa.md`.
+- Architecture diagrams: `docs/architecture-diagram.md`.
+- Thesis proposal draft: `docs/thesis-proposal.md`.
+- Thesis outline: `docs/thesis-outline.md`.
+- Thesis abstract: `docs/thesis/abstract.md`.
+- Chapter 1 draft: `docs/thesis/chapter-01-introduction.md`.
+- Chapter 2 draft: `docs/thesis/chapter-02-background-related-work.md`.
+- Chapter 3 draft: `docs/thesis/chapter-03-proposed-system.md`.
+- Chapter 4 draft: `docs/thesis/chapter-04-implementation.md`.
+- Chapter 5 draft: `docs/thesis/chapter-05-experiments-evaluation.md`.
+- Chapter 6 draft: `docs/thesis/chapter-06-discussion.md`.
+- Chapter 7 draft: `docs/thesis/chapter-07-conclusion-future-work.md`.
+- Six-month roadmap: `docs/roadmap-6-months.md`.
+- Development direction: `docs/development-direction.md`.
 
 ## Thesis Scope
 
