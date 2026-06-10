@@ -5,6 +5,7 @@ PLAYBOOK_DIR = Path(__file__).resolve().parents[3] / "knowledge_base" / "playboo
 
 
 def retrieve_context(attack_type: str) -> str:
+    # Ten file playbook duoc suy ra truc tiep tu loai tan cong.
     filename = attack_type.lower().replace(" ", "-") + ".md"
     path = PLAYBOOK_DIR / filename
     if not path.exists():

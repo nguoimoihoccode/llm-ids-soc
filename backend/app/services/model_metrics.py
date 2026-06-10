@@ -28,6 +28,7 @@ def calculate_binary_metrics(
     return {
         "model_name": model_name,
         "dataset_id": dataset_id,
+        "sample_count": total,
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,

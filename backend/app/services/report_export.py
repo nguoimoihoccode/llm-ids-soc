@@ -16,6 +16,7 @@ MODEL_COMPARISON_FIELDS = [
 
 
 def export_model_comparison_csv(metrics_dir: Path, output_path: Path) -> int:
+    # Gom metric JSON thanh mot bang CSV de dua vao bao cao.
     metrics = sorted(
         list_metric_artifacts(metrics_dir),
         key=lambda metric: (str(metric.get("dataset_id", "")), str(metric.get("model_name", ""))),

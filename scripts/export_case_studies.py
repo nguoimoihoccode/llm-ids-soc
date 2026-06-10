@@ -14,6 +14,7 @@ from app.services.detector import generate_alerts  # noqa: E402
 
 
 def main() -> None:
+    # Tao case study markdown tu alert mau de dung cho phan evaluation/thesis.
     parser = argparse.ArgumentParser(description="Export incident case studies markdown report.")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()

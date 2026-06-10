@@ -6,6 +6,7 @@ DEFAULT_METRICS_DIR = Path(__file__).resolve().parents[3] / "models" / "metrics"
 
 
 def list_metric_artifacts(metrics_dir: Path = DEFAULT_METRICS_DIR) -> list[dict[str, object]]:
+    # Nap tat ca file JSON metric da luu trong thu muc metrics.
     if not metrics_dir.exists():
         return []
 

@@ -12,6 +12,7 @@ from app.services.ml_evaluation import evaluate_rule_based_baseline
 
 app = FastAPI(title="LLM IDS SOC API")
 
+# CORS cho frontend dev server de goi API truc tiep.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -28,6 +29,7 @@ def health() -> dict[str, str]:
 
 @app.get("/events", response_model=list[NetworkEvent])
 def events() -> list[NetworkEvent]:
+    # Tra ve tap event mau de dashboard va detector cung dung chung du lieu.
     return load_sample_events()
 
 
@@ -38,11 +40,13 @@ def datasets() -> list[DatasetInfo]:
 
 @app.get("/alerts", response_model=list[Alert])
 def alerts() -> list[Alert]:
+    # Detector rule-based bien event thanh alert cho demo SOC.
     return generate_alerts(load_sample_events())
 
 
 @app.get("/alerts/{alert_id}", response_model=Alert)
 def alert_detail(alert_id: str) -> Alert:
+    # Tim alert trong danh sach alert da sinh san.
     for alert in generate_alerts(load_sample_events()):
         if alert.alert_id == alert_id:
             return alert

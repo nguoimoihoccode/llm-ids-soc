@@ -8,10 +8,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_ROOT = PROJECT_ROOT / "backend"
 sys.path.insert(0, str(BACKEND_ROOT))
 
+# Goi service lay feature importance tu model artifact da train.
 from app.services.feature_importance_export import export_feature_importance_csvs  # noqa: E402
 
 
 def main() -> None:
+    # CLI can dataset id de tim dung cac file model trong models-dir.
     parser = argparse.ArgumentParser(description="Export tree-model feature importance CSV files.")
     parser.add_argument("--dataset-id", required=True)
     parser.add_argument("--input", required=True, type=Path)

@@ -15,6 +15,7 @@ RUBRIC_FIELDS = [
 
 
 def evaluate_comparison_with_rubric(comparison: dict[str, object]) -> list[dict[str, object]]:
+    # Cham diem tung mode giai thich theo rubric de so sanh co cau truc.
     alert_id = str(comparison["alert_id"])
     rows: list[dict[str, object]] = []
     for item in comparison["comparisons"]:  # type: ignore[index]
@@ -38,6 +39,7 @@ def evaluate_comparison_with_rubric(comparison: dict[str, object]) -> list[dict[
 
 
 def export_rubric_scores_csv(rows: list[dict[str, object]], output_path: Path) -> None:
+    # Luu diem rubric ra CSV phuc vu phan tich bao cao.
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=RUBRIC_FIELDS)
@@ -46,6 +48,7 @@ def export_rubric_scores_csv(rows: list[dict[str, object]], output_path: Path) -
 
 
 def _score_correctness(summary: str) -> int:
+    # Neu summary nhac dung loai attack thi duoc diem cao hon.
     return 5 if any(term in summary for term in ["Brute Force", "DDoS", "Port Scan"]) else 3
 
 
@@ -59,6 +62,7 @@ def _score_completeness(summary: str, uses_rag: bool) -> int:
 
 
 def _score_groundedness(summary: str, knowledge_context: str, uses_rag: bool) -> int:
+    # RAG co playbook that su thi diem grounding tang len ro rang.
     score = 2
     if "evidence" in summary.lower() or "MITRE" in summary:
         score += 1
@@ -68,11 +72,13 @@ def _score_groundedness(summary: str, knowledge_context: str, uses_rag: bool) ->
 
 
 def _score_actionability(summary: str, knowledge_context: str, uses_rag: bool) -> int:
+    # Coi trong khuyen nghi xu ly hon la chi mo ta su kien.
     if uses_rag and knowledge_context:
         return 5
     return 4 if "response" in summary.lower() or "guidance" in summary.lower() else 2
 
 
 def _score_hallucination_safety(summary: str) -> int:
+    # Cang it ngon ngu phan doan/khang dinh qua muc thi cang an toan.
     risky_terms = ["CVE-", "guaranteed", "certainly compromised"]
     return 3 if any(term in summary for term in risky_terms) else 5

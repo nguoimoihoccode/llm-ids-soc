@@ -15,12 +15,14 @@ from app.services.llm_service import compare_explanation_modes  # noqa: E402
 
 
 def main() -> None:
+    # Tao alert mau, so sanh cac mode giai thich, roi cham diem bang rubric co dinh.
     parser = argparse.ArgumentParser(description="Evaluate LLM explanation modes with a deterministic rubric.")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
 
     rows: list[dict[str, object]] = []
     for alert in generate_alerts(load_sample_events()):
+        # model_dump bien Pydantic model thanh dict de rubric doc duoc don gian.
         comparison = compare_explanation_modes(alert).model_dump()
         rows.extend(evaluate_comparison_with_rubric(comparison))
     export_rubric_scores_csv(rows, args.output)

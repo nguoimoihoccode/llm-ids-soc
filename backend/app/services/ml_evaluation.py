@@ -2,6 +2,7 @@ from app.models import ModelEvaluation, NetworkEvent
 
 
 def evaluate_rule_based_baseline(events: list[NetworkEvent]) -> ModelEvaluation:
+    # Danh gia rule-based baseline tren tap event mau de co so sanh nhanh.
     predictions = [_predict_label(event) for event in events]
     labels = [event.label for event in events]
     sample_count = len(labels)
@@ -17,6 +18,7 @@ def evaluate_rule_based_baseline(events: list[NetworkEvent]) -> ModelEvaluation:
 
 
 def _predict_label(event: NetworkEvent) -> str:
+    # Nhom quy tac rat don gian: chi so bat thuong vuot nguong thi gan la Attack.
     if event.failed_login_count >= 20:
         return "Attack"
     if event.flow_packets_s >= 500:
@@ -27,6 +29,7 @@ def _predict_label(event: NetworkEvent) -> str:
 
 
 def _recall(labels: list[str], predictions: list[str], target: str) -> float:
+    # Tinh recall rieng cho tung lop de biet model bat duoc Attack/Benign den dau.
     positives = [index for index, label in enumerate(labels) if label == target]
     if not positives:
         return 0.0

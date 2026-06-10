@@ -11,6 +11,7 @@ def export_feature_importance_csvs(
     models_dir: Path,
     output_dir: Path,
 ) -> list[Path]:
+    # Lay feature importance tu cac model co ho tro va xuat thanh CSV.
     frame = pd.read_csv(processed_path)
     feature_names = [column for column in frame.columns if column != "label"]
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -31,6 +32,7 @@ def export_feature_importance_csvs(
 
 
 def _write_importances(output_path: Path, feature_names: list[str], importances) -> None:
+    # Sap xep feature theo muc do anh huong giam dan.
     rows = sorted(
         zip(feature_names, [float(value) for value in importances]),
         key=lambda item: item[1],

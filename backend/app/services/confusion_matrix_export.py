@@ -5,6 +5,7 @@ from app.services.metric_artifacts import list_metric_artifacts
 
 
 def export_confusion_matrix_svgs(metrics_dir: Path, figures_dir: Path) -> list[Path]:
+    # Moi metric hop le se duoc ve thanh mot hinh SVG confusion matrix.
     figures_dir.mkdir(parents=True, exist_ok=True)
     outputs: list[Path] = []
     for metric in list_metric_artifacts(metrics_dir):
@@ -25,6 +26,7 @@ def _is_binary_matrix(matrix: object) -> bool:
 
 
 def _render_svg(dataset_id: str, model_name: str, matrix: list[list[int]]) -> str:
+    # Ve 4 o TN/FP/FN/TP bang SVG de xem truc tiep trong bao cao.
     tn, fp = matrix[0]
     fn, tp = matrix[1]
     title = f"Confusion Matrix: {dataset_id} / {model_name}"

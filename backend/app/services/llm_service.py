@@ -4,6 +4,7 @@ from app.services.rag_service import retrieve_context
 
 
 def explain_alert(alert: Alert) -> Explanation:
+    # Tao phan giai thich doc duoc boi con nguoi, co context playbook kem theo.
     context = retrieve_context(alert.attack_type)
     return Explanation(
         alert_id=alert.alert_id,
@@ -23,6 +24,7 @@ def explain_alert(alert: Alert) -> Explanation:
 
 
 def compare_explanation_modes(alert: Alert) -> ExplanationComparison:
+    # Cho xem cung 1 alert se duoc trinh bay khac nhau nhu the nao khi co/khong co RAG.
     rag_context = retrieve_context(alert.attack_type)
     return ExplanationComparison(
         alert_id=alert.alert_id,
@@ -56,6 +58,7 @@ def compare_explanation_modes(alert: Alert) -> ExplanationComparison:
 
 
 def _recommendations(attack_type: str) -> list[str]:
+    # Khuyen nghi xu ly duoc chon theo loai attack, de khop nghiep vu SOC.
     if attack_type == "Brute Force":
         return [
             "Block or rate-limit the source IP.",

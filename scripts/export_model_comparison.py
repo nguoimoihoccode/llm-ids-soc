@@ -8,10 +8,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_ROOT = PROJECT_ROOT / "backend"
 sys.path.insert(0, str(BACKEND_ROOT))
 
+# Goi service backend de gom cac metric JSON thanh bang so sanh model.
 from app.services.report_export import export_model_comparison_csv  # noqa: E402
 
 
 def main() -> None:
+    # CLI nhan thu muc metrics va duong dan CSV dau ra.
     parser = argparse.ArgumentParser(description="Export model comparison CSV from saved metric artifacts.")
     parser.add_argument("--metrics-dir", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)

@@ -8,10 +8,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_ROOT = PROJECT_ROOT / "backend"
 sys.path.insert(0, str(BACKEND_ROOT))
 
+# Goi service ve confusion matrix thanh SVG de chen vao bao cao.
 from app.services.confusion_matrix_export import export_confusion_matrix_svgs  # noqa: E402
 
 
 def main() -> None:
+    # CLI nhan thu muc metrics va thu muc chua hinh dau ra.
     parser = argparse.ArgumentParser(description="Export confusion matrix SVG figures from saved metric artifacts.")
     parser.add_argument("--metrics-dir", required=True, type=Path)
     parser.add_argument("--figures-dir", required=True, type=Path)

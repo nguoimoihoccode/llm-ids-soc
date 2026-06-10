@@ -4,6 +4,7 @@ from app.services.llm_service import compare_explanation_modes, explain_alert
 
 
 def build_incident_case_studies_markdown(alerts: list[Alert]) -> str:
+    # Moi alert thanh 1 case study gom alert, giai thich, so sanh va diem rubric.
     lines = ["# Incident Case Studies", ""]
     for index, alert in enumerate(alerts, start=1):
         explanation = explain_alert(alert)

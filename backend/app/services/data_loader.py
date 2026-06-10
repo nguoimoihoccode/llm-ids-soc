@@ -8,12 +8,14 @@ SAMPLE_DATA_PATH = Path(__file__).resolve().parents[3] / "data" / "samples" / "n
 
 
 def load_sample_events(path: Path = SAMPLE_DATA_PATH) -> list[NetworkEvent]:
+    # Doc CSV mau va ep kieu tung cot thanh model NetworkEvent.
     with path.open(newline="", encoding="utf-8") as file:
         rows = csv.DictReader(file)
         return [NetworkEvent(**_coerce_row(row)) for row in rows]
 
 
 def _coerce_row(row: dict[str, str]) -> dict[str, object]:
+    # CSV doc vao luon la string, nen phai doi ve int/float truoc khi tao model.
     int_fields = {
         "src_port",
         "dst_port",
