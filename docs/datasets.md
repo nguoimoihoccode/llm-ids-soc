@@ -53,6 +53,17 @@ The command writes JSON with row count, column count, required columns, missing 
 5. Run `scripts/run_dataset_pipeline.py` with explicit `--dataset-id` and output directory.
 6. Use generated reports and figures in thesis chapters only after confirming the dataset source, split strategy, and metric definitions.
 
+For official UNSW-NB15 train/test files, preserve the published split:
+
+```bash
+backend/.venv/bin/python scripts/run_dataset_pipeline.py \
+  --dataset-id unsw-nb15-official \
+  --train-input data/raw/UNSW_NB15_training-set.csv \
+  --test-input data/raw/UNSW_NB15_testing-set.csv \
+  --output-dir reports/pipeline/unsw-nb15-official \
+  --models logistic_regression,decision_tree,random_forest
+```
+
 ## Reporting Notes
 
 Use fixture results only to prove the pipeline runs. Do not report fixture metrics as research performance. Full thesis results should come from complete benchmark datasets with documented train/test split, preprocessing, model versions, and random seed.

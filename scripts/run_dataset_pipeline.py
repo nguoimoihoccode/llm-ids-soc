@@ -10,6 +10,7 @@ sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services.dataset_profile import profile_dataset_csv  # noqa: E402
 from app.services.dataset_split import split_dataset_csv  # noqa: E402
+from app.models import DatasetSplitSummary  # noqa: E402
 from app.services.confusion_matrix_export import export_confusion_matrix_svgs  # noqa: E402
 from app.services.feature_importance_export import export_feature_importance_csvs  # noqa: E402
 from app.services.model_training import train_models_from_split_csv  # noqa: E402
@@ -20,7 +21,9 @@ from app.services.report_export import export_model_comparison_csv  # noqa: E402
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run profile, split, preprocess, and train workflow for IDS CSV data.")
     parser.add_argument("--dataset-id", required=True)
-    parser.add_argument("--input", required=True, type=Path)
+    parser.add_argument("--input", type=Path)
+    parser.add_argument("--train-input", type=Path)
+    parser.add_argument("--test-input", type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--models", default="logistic_regression,decision_tree,random_forest")
     parser.add_argument("--test-size", default=0.2, type=float)
@@ -44,16 +47,39 @@ def main() -> None:
     processed_train_path = processed_dir / "train.csv"
     processed_test_path = processed_dir / "test.csv"
 
-    profile = profile_dataset_csv(args.input)
-    profile_path.write_text(json.dumps(profile.model_dump(), indent=2), encoding="utf-8")
+    if args.train_input and args.test_input:
+        split_mode = "explicit"
+        profile = profile_dataset_csv(args.train_input)
+        train_profile = profile_dataset_csv(args.train_input)
+        test_profile = profile_dataset_csv(args.test_input)
+        split_summary = DatasetSplitSummary(
+            total_rows=train_profile.row_count + test_profile.row_count,
+            train_rows=train_profile.row_count,
+            test_rows=test_profile.row_count,
+            label_column="label",
+            test_size=test_profile.row_count / (train_profile.row_count + test_profile.row_count),
+            random_state=args.random_state,
+            stratified=False,
+            split_strategy="explicit_train_test",
+            train_label_distribution=train_profile.label_distribution,
+            test_label_distribution=test_profile.label_distribution,
+        )
+        raw_train_path.write_text(args.train_input.read_text(encoding="utf-8"), encoding="utf-8")
+        raw_test_path.write_text(args.test_input.read_text(encoding="utf-8"), encoding="utf-8")
+    elif args.input:
+        split_mode = "generated"
+        profile = profile_dataset_csv(args.input)
+        split_summary = split_dataset_csv(
+            raw_path=args.input,
+            train_path=raw_train_path,
+            test_path=raw_test_path,
+            test_size=args.test_size,
+            random_state=args.random_state,
+        )
+    else:
+        parser.error("Provide either --input or both --train-input and --test-input.")
 
-    split_summary = split_dataset_csv(
-        raw_path=args.input,
-        train_path=raw_train_path,
-        test_path=raw_test_path,
-        test_size=args.test_size,
-        random_state=args.random_state,
-    )
+    profile_path.write_text(json.dumps(profile.model_dump(), indent=2), encoding="utf-8")
     split_summary_path.write_text(json.dumps(split_summary.model_dump(), indent=2), encoding="utf-8")
 
     preprocess_unsw_nb15_csv(raw_train_path, processed_train_path)
@@ -82,6 +108,7 @@ def main() -> None:
 
     summary = {
         "dataset_id": args.dataset_id,
+        "split_mode": split_mode,
         "profile_path": str(profile_path),
         "split_summary_path": str(split_summary_path),
         "report_path": str(report_path),

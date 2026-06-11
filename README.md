@@ -227,7 +227,18 @@ backend/.venv/bin/python scripts/run_dataset_pipeline.py \
   --random-state 42
 ```
 
-This runs the research workflow in one command: profile dataset, split train/test, preprocess both splits, train models, evaluate on the test split, and export artifacts under the selected output directory. It also writes `pipeline-report.md`, a thesis-ready summary of dataset profile, split setup, model metrics, and generated artifact paths, plus `reports/model-comparison.csv`, confusion matrix SVG figures, and tree-model feature importance CSV files compatible with the standard evaluation workflow.
+For benchmark datasets with official train/test files, keep the published split instead of generating a new random split:
+
+```bash
+backend/.venv/bin/python scripts/run_dataset_pipeline.py \
+  --dataset-id unsw-nb15-official \
+  --train-input data/raw/UNSW_NB15_training-set.csv \
+  --test-input data/raw/UNSW_NB15_testing-set.csv \
+  --output-dir reports/pipeline/unsw-nb15-official \
+  --models logistic_regression,decision_tree,random_forest
+```
+
+This runs the research workflow in one command: profile dataset, create or record the train/test split, preprocess both splits, train models, evaluate on the test split, and export artifacts under the selected output directory. It also writes `pipeline-report.md`, a thesis-ready summary of dataset profile, split setup, model metrics, and generated artifact paths, plus `reports/model-comparison.csv`, confusion matrix SVG figures, and tree-model feature importance CSV files compatible with the standard evaluation workflow.
 
 ### Profile An IDS Dataset CSV
 
