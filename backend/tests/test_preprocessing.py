@@ -17,14 +17,14 @@ def test_preprocess_unsw_nb15_cleans_values_and_encodes_labels(tmp_path: Path) -
     summary = preprocess_unsw_nb15_csv(raw_path, processed_path)
 
     assert summary.row_count == 2
-    assert summary.feature_count == 12
+    assert summary.feature_count == 10
     assert summary.label_column == "label"
     assert summary.attack_categories == ["DoS", "Normal"]
     output = processed_path.read_text(encoding="utf-8")
     assert "inf" not in output.lower()
     assert "nan" not in output.lower()
     assert "proto_tcp" in output
-    assert "attack_cat_DoS" in output
+    assert "attack_cat_DoS" not in output
 
 
 def test_preprocess_unsw_nb15_replaces_non_finite_numbers(tmp_path: Path) -> None:
