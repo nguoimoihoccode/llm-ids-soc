@@ -64,6 +64,33 @@ backend/.venv/bin/python scripts/run_dataset_pipeline.py \
   --models logistic_regression,decision_tree,random_forest
 ```
 
+For CICIDS2017/CSE-CIC-IDS files, first normalize the original CICFlowMeter `Label` column to the project schema:
+
+```bash
+backend/.venv/bin/python scripts/normalize_cicids.py \
+  --input data/raw/CICIDS2017-Friday-DDos.csv \
+  --output data/processed/cicids2017_friday_ddos_normalized.csv
+```
+
+Then validate and run the pipeline on the normalized CSV:
+
+```bash
+backend/.venv/bin/python scripts/validate_dataset.py \
+  --input data/processed/cicids2017_friday_ddos_normalized.csv \
+  --output reports/evaluation/cicids2017-friday-ddos-validation.json \
+  --min-rows 1000
+```
+
+```bash
+backend/.venv/bin/python scripts/run_dataset_pipeline.py \
+  --dataset-id cicids2017-friday-ddos \
+  --input data/processed/cicids2017_friday_ddos_normalized.csv \
+  --output-dir reports/pipeline/cicids2017-friday-ddos \
+  --models logistic_regression,decision_tree,random_forest \
+  --test-size 0.2 \
+  --random-state 42
+```
+
 ## Reporting Notes
 
 Use fixture results only to prove the pipeline runs. Do not report fixture metrics as research performance. Full thesis results should come from complete benchmark datasets with documented train/test split, preprocessing, model versions, and random seed.

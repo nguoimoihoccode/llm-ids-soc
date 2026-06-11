@@ -167,6 +167,58 @@ Current best F1-score is Logistic Regression with `0.6757`.
 
 These results should be treated as baseline results, not final optimized thesis results. Future work should add stronger models, feature selection, scaling, tuning, and explainability.
 
+## CICIDS2017 Work Completed
+
+CICIDS2017 support has been started using the public CICIDS2017 Friday afternoon DDoS CSV mirror on Hugging Face.
+
+Local raw file:
+
+- `data/raw/CICIDS2017-Friday-DDos.csv`
+
+Normalization step:
+
+```bash
+backend/.venv/bin/python scripts/normalize_cicids.py \
+  --input data/raw/CICIDS2017-Friday-DDos.csv \
+  --output data/processed/cicids2017_friday_ddos_normalized.csv
+```
+
+The normalizer converts CICIDS/CICFlowMeter schema into the project IDS schema:
+
+- Strips whitespace from column names.
+- Converts original `Label` into binary `label`.
+- Copies original attack name into `attack_cat`.
+- Maps `BENIGN` to `0` and non-benign labels to `1`.
+- Replaces infinite and missing values for downstream preprocessing.
+
+Validation result:
+
+- `225,745` rows.
+- `80` columns after normalization.
+- Required columns present: `label`, `attack_cat`.
+- Attack categories: `BENIGN`, `DDoS`.
+
+Generated local outputs:
+
+- `reports/evaluation/cicids2017-friday-ddos-validation.json`
+- `reports/evaluation/cicids2017-friday-ddos-profile.json`
+- `reports/pipeline/cicids2017-friday-ddos/pipeline-summary.json`
+- `reports/pipeline/cicids2017-friday-ddos/pipeline-report.md`
+- `reports/pipeline/cicids2017-friday-ddos/reports/model-comparison.csv`
+- `reports/pipeline/cicids2017-friday-ddos/metrics/*.json`
+- `reports/pipeline/cicids2017-friday-ddos/figures/*.svg`
+- `reports/pipeline/cicids2017-friday-ddos/reports/feature-importance/*.csv`
+
+Current CICIDS2017 Friday DDoS random-split baseline results are:
+
+| Model | Accuracy | Precision | Recall | F1-score | False Positive Rate |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Decision Tree | 0.99996 | 0.99996 | 0.99996 | 0.99996 | 0.00005 |
+| Logistic Regression | 0.96494 | 0.95427 | 0.98539 | 0.96958 | 0.06186 |
+| Random Forest | 0.99993 | 0.99996 | 0.99992 | 0.99994 | 0.00005 |
+
+These CICIDS2017 results are useful as a pipeline milestone only. They use one day/attack subset and a generated random split, not the full CICIDS2017 multi-day benchmark protocol. Full thesis claims should use a documented full-dataset or temporal split setup.
+
 ## Implemented Documentation
 
 Documentation already created or expanded includes:
@@ -202,7 +254,7 @@ cd backend
 Result:
 
 ```text
-42 passed in 8.10s
+44 passed in 8.11s
 ```
 
 ```bash
@@ -213,7 +265,7 @@ npm run build
 Result:
 
 ```text
-✓ built in 206ms
+✓ built in 149ms
 ```
 
 ## Git Status
@@ -233,7 +285,7 @@ The latest pushed branch is `main` on `origin`.
 
 Important unfinished work:
 
-- Add CICIDS2017 or CSE-CIC-IDS2018 dataset processing and evaluation.
+- Expand CICIDS2017 from the current Friday DDoS subset to a full multi-day benchmark setup.
 - Add XGBoost or LightGBM model experiments.
 - Add feature scaling and hyperparameter tuning.
 - Add SHAP or LIME explainability.
