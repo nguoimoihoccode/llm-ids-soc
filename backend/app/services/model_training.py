@@ -5,6 +5,8 @@ import joblib
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 
@@ -85,6 +87,13 @@ def _build_model(model_name: str):
     # Map ten model sang classifier cu the dung trong demo.
     if model_name == "logistic_regression":
         return LogisticRegression(max_iter=1000, random_state=42)
+    if model_name == "logistic_regression_scaled":
+        return Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                ("model", LogisticRegression(max_iter=2000, random_state=42)),
+            ]
+        )
     if model_name == "decision_tree":
         return DecisionTreeClassifier(random_state=42)
     if model_name == "random_forest":
@@ -94,6 +103,18 @@ def _build_model(model_name: str):
             n_estimators=50,
             max_depth=4,
             learning_rate=0.1,
+            eval_metric="logloss",
+            random_state=42,
+        )
+    if model_name == "xgboost_tuned":
+        return XGBClassifier(
+            n_estimators=120,
+            max_depth=3,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            min_child_weight=3,
+            reg_lambda=2.0,
             eval_metric="logloss",
             random_state=42,
         )

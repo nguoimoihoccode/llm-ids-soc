@@ -80,9 +80,11 @@ The current benchmark evaluation uses:
 The current baseline models are:
 
 - Logistic Regression.
+- Logistic Regression with StandardScaler.
 - Decision Tree.
 - Random Forest.
 - XGBoost.
+- Tuned XGBoost configuration.
 
 These models were selected because they represent simple, interpretable, tree-based, ensemble, and boosted supervised learning baselines for tabular IDS data.
 
@@ -121,7 +123,7 @@ backend/.venv/bin/python scripts/run_dataset_pipeline.py \
   --train-input data/raw/UNSW_NB15_training-set.csv \
   --test-input data/raw/UNSW_NB15_testing-set.csv \
   --output-dir reports/pipeline/unsw-nb15-official \
-  --models logistic_regression,decision_tree,random_forest,xgboost
+  --models logistic_regression,logistic_regression_scaled,decision_tree,random_forest,xgboost,xgboost_tuned
 ```
 
 For CICIDS2017 random split evaluation, the pipeline command is:
@@ -162,10 +164,12 @@ UNSW-NB15 was evaluated using the official training and testing files. The targe
 |---|---|---:|---:|---:|---:|---:|
 | UNSW-NB15 | Decision Tree | 0.5241 | 0.6042 | 0.3932 | 0.4764 | 0.3156 |
 | UNSW-NB15 | Logistic Regression | 0.6159 | 0.6313 | 0.7268 | 0.6757 | 0.5201 |
+| UNSW-NB15 | Logistic Regression + Scaling | 0.7326 | 0.7416 | 0.7894 | 0.7647 | 0.3371 |
 | UNSW-NB15 | Random Forest | 0.5741 | 0.6626 | 0.4614 | 0.5440 | 0.2879 |
 | UNSW-NB15 | XGBoost | 0.5294 | 0.5975 | 0.4453 | 0.5103 | 0.3675 |
+| UNSW-NB15 | XGBoost Tuned | 0.5047 | 0.5726 | 0.3966 | 0.4686 | 0.3627 |
 
-The strongest current UNSW-NB15 baseline by F1-score is Logistic Regression. XGBoost was added as a boosted baseline, but with the current simple feature handling and default-like configuration it does not outperform Logistic Regression. This suggests that further work should focus on scaling, feature selection, and hyperparameter tuning before making final claims about boosted models.
+The strongest current UNSW-NB15 baseline by F1-score is Logistic Regression with StandardScaler. Scaling improves the baseline from `0.6757` F1-score to `0.7647`, showing that feature scale has a significant effect on linear models for this dataset. XGBoost and the current tuned XGBoost configuration do not outperform scaled Logistic Regression. This suggests that further work should focus on richer hyperparameter search, feature selection, and protocol-specific tuning before making final claims about boosted models.
 
 ### 5.5.2 CICIDS2017 Full Random Split Results
 

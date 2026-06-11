@@ -161,12 +161,14 @@ After removing attack-category leakage, current official split results are:
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Decision Tree | 0.5241 | 0.6042 | 0.3932 | 0.4764 | 0.3156 |
 | Logistic Regression | 0.6159 | 0.6313 | 0.7268 | 0.6757 | 0.5201 |
+| Logistic Regression + Scaling | 0.7326 | 0.7416 | 0.7894 | 0.7647 | 0.3371 |
 | Random Forest | 0.5741 | 0.6626 | 0.4614 | 0.5440 | 0.2879 |
 | XGBoost | 0.5294 | 0.5975 | 0.4453 | 0.5103 | 0.3675 |
+| XGBoost Tuned | 0.5047 | 0.5726 | 0.3966 | 0.4686 | 0.3627 |
 
-Current best F1-score is Logistic Regression with `0.6757`.
+Current best F1-score is Logistic Regression with StandardScaler at `0.7647`.
 
-These results should be treated as baseline results, not final optimized thesis results. XGBoost has been added but does not outperform Logistic Regression under the current no-tuning setup, so future work should focus on feature scaling, feature selection, hyperparameter tuning, and explainability.
+These results should be treated as baseline results, not final optimized thesis results. Scaling substantially improves Logistic Regression. The current tuned XGBoost configuration does not improve over the default XGBoost baseline, so future work should use broader hyperparameter search and feature selection.
 
 ## CICIDS2017 Work Completed
 
@@ -269,7 +271,7 @@ cd backend
 Result:
 
 ```text
-47 passed in 9.39s
+48 passed in 9.06s
 ```
 
 ```bash
@@ -280,7 +282,7 @@ npm run build
 Result:
 
 ```text
-✓ built in 119ms
+✓ built in 102ms
 ```
 
 ## Git Status

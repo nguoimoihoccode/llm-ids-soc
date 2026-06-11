@@ -175,3 +175,36 @@ def test_train_models_from_split_csv_supports_xgboost(tmp_path: Path) -> None:
     assert results[0]["sample_count"] == 2
     assert (metrics_dir / "xgb-fixture-xgboost.json").exists()
     assert (models_dir / "xgb-fixture-xgboost.joblib").exists()
+
+
+def test_train_models_from_split_csv_supports_scaled_and_tuned_variants(tmp_path: Path) -> None:
+    train_path = tmp_path / "train.csv"
+    test_path = tmp_path / "test.csv"
+    metrics_dir = tmp_path / "metrics"
+    models_dir = tmp_path / "trained"
+    train_path.write_text(
+        "feature_a,feature_b,label\n"
+        "0,100,0\n"
+        "1,110,0\n"
+        "2,120,0\n"
+        "10,1000,1\n"
+        "11,1100,1\n"
+        "12,1200,1\n",
+        encoding="utf-8",
+    )
+    test_path.write_text("feature_a,feature_b,label\n3,130,0\n13,1300,1\n", encoding="utf-8")
+
+    results = train_models_from_split_csv(
+        dataset_id="variant-fixture",
+        train_path=train_path,
+        test_path=test_path,
+        metrics_dir=metrics_dir,
+        models_dir=models_dir,
+        model_names=["logistic_regression_scaled", "xgboost_tuned"],
+    )
+
+    assert [result["model_name"] for result in results] == ["logistic_regression_scaled", "xgboost_tuned"]
+    assert (metrics_dir / "variant-fixture-logistic_regression_scaled.json").exists()
+    assert (metrics_dir / "variant-fixture-xgboost_tuned.json").exists()
+    assert (models_dir / "variant-fixture-logistic_regression_scaled.joblib").exists()
+    assert (models_dir / "variant-fixture-xgboost_tuned.joblib").exists()
