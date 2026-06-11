@@ -115,3 +115,12 @@ class DatasetSplitSummary(BaseModel):
     split_strategy: str
     train_label_distribution: dict[str, int]
     test_label_distribution: dict[str, int]
+
+
+class DatasetValidationResult(BaseModel):
+    valid: bool
+    row_count: int
+    column_count: int
+    required_columns: list[str]
+    missing_required_columns: list[str]
+    errors: list[str]

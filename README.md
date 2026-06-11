@@ -206,6 +206,17 @@ Run these commands from the repository root unless noted otherwise.
 
 ### Run End-To-End Dataset Pipeline
 
+Validate raw benchmark CSV files before running the full pipeline:
+
+```bash
+backend/.venv/bin/python scripts/validate_dataset.py \
+  --input data/raw/UNSW_NB15_training-set.csv \
+  --output reports/evaluation/unsw-nb15-validation.json \
+  --min-rows 1000
+```
+
+See `docs/datasets.md` for dataset source, placement, validation, and reporting guidance.
+
 ```bash
 backend/.venv/bin/python scripts/run_dataset_pipeline.py \
   --dataset-id fixture-pipeline \
