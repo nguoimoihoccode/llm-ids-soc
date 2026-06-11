@@ -383,6 +383,7 @@ See `docs/evaluation-plan.md` for more detail.
 - Chapter 7 draft: `docs/thesis/chapter-07-conclusion-future-work.md`.
 - Six-month roadmap: `docs/roadmap-6-months.md`.
 - Development direction: `docs/development-direction.md`.
+- Current progress summary: `docs/progress-summary.md`.
 
 ## Thesis Scope
 
