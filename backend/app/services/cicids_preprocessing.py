@@ -7,6 +7,22 @@ from app.models import PreprocessingSummary
 
 def normalize_cicids_csv(raw_path: Path, output_path: Path) -> PreprocessingSummary:
     frame = pd.read_csv(raw_path)
+    normalized = _normalize_cicids_frame(frame)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    normalized.to_csv(output_path, index=False)
+    return _build_summary(normalized)
+
+
+def normalize_cicids_csv_files(raw_paths: list[Path], output_path: Path) -> PreprocessingSummary:
+    frames = [_normalize_cicids_frame(pd.read_csv(raw_path)) for raw_path in raw_paths]
+    merged = pd.concat(frames, ignore_index=True, sort=False).fillna(0)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    merged.to_csv(output_path, index=False)
+    return _build_summary(merged)
+
+
+def _normalize_cicids_frame(frame: pd.DataFrame) -> pd.DataFrame:
     frame.columns = [column.strip() for column in frame.columns]
     if "Label" not in frame.columns:
         raise ValueError("CICIDS CSV must include a Label column.")
@@ -17,13 +33,13 @@ def normalize_cicids_csv(raw_path: Path, output_path: Path) -> PreprocessingSumm
     frame["label"] = labels.str.upper().ne("BENIGN").astype(int)
     frame = frame.drop(columns=["Label"])
     frame = frame.replace([float("inf"), float("-inf"), "inf", "-inf", "Infinity", "-Infinity"], 0)
-    frame = frame.fillna(0)
+    return frame.fillna(0)
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_csv(output_path, index=False)
+
+def _build_summary(frame: pd.DataFrame) -> PreprocessingSummary:
     return PreprocessingSummary(
         row_count=len(frame),
         feature_count=len(frame.columns),
         label_column="label",
-        attack_categories=attack_categories,
+        attack_categories=sorted(frame["attack_cat"].astype(str).dropna().unique().tolist()),
     )

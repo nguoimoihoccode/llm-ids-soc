@@ -68,24 +68,31 @@ For CICIDS2017/CSE-CIC-IDS files, first normalize the original CICFlowMeter `Lab
 
 ```bash
 backend/.venv/bin/python scripts/normalize_cicids.py \
+  --input data/raw/CICIDS2017-Monday.csv \
+  --input data/raw/CICIDS2017-Tuesday.csv \
+  --input data/raw/CICIDS2017-Wednesday.csv \
+  --input data/raw/CICIDS2017-Thursday-Morning-WebAttacks.csv \
+  --input data/raw/CICIDS2017-Thursday-Afternoon-Infilteration.csv \
+  --input data/raw/CICIDS2017-Friday-Morning.csv \
   --input data/raw/CICIDS2017-Friday-DDos.csv \
-  --output data/processed/cicids2017_friday_ddos_normalized.csv
+  --input data/raw/CICIDS2017-Friday-PortScan.csv \
+  --output data/processed/cicids2017_full_normalized.csv
 ```
 
 Then validate and run the pipeline on the normalized CSV:
 
 ```bash
 backend/.venv/bin/python scripts/validate_dataset.py \
-  --input data/processed/cicids2017_friday_ddos_normalized.csv \
-  --output reports/evaluation/cicids2017-friday-ddos-validation.json \
+  --input data/processed/cicids2017_full_normalized.csv \
+  --output reports/evaluation/cicids2017-full-validation.json \
   --min-rows 1000
 ```
 
 ```bash
 backend/.venv/bin/python scripts/run_dataset_pipeline.py \
-  --dataset-id cicids2017-friday-ddos \
-  --input data/processed/cicids2017_friday_ddos_normalized.csv \
-  --output-dir reports/pipeline/cicids2017-friday-ddos \
+  --dataset-id cicids2017-full \
+  --input data/processed/cicids2017_full_normalized.csv \
+  --output-dir reports/pipeline/cicids2017-full \
   --models logistic_regression,decision_tree,random_forest \
   --test-size 0.2 \
   --random-state 42

@@ -169,18 +169,32 @@ These results should be treated as baseline results, not final optimized thesis 
 
 ## CICIDS2017 Work Completed
 
-CICIDS2017 support has been started using the public CICIDS2017 Friday afternoon DDoS CSV mirror on Hugging Face.
+CICIDS2017 support now covers the public multi-day MachineLearningCSV files mirrored on Hugging Face. The workflow downloads the daily CSV files, normalizes their CICFlowMeter schema, merges them into one project-compatible IDS CSV, validates it, and runs the standard benchmark pipeline.
 
-Local raw file:
+Local raw files:
 
+- `data/raw/CICIDS2017-Monday.csv`
+- `data/raw/CICIDS2017-Tuesday.csv`
+- `data/raw/CICIDS2017-Wednesday.csv`
+- `data/raw/CICIDS2017-Thursday-Morning-WebAttacks.csv`
+- `data/raw/CICIDS2017-Thursday-Afternoon-Infilteration.csv`
+- `data/raw/CICIDS2017-Friday-Morning.csv`
 - `data/raw/CICIDS2017-Friday-DDos.csv`
+- `data/raw/CICIDS2017-Friday-PortScan.csv`
 
 Normalization step:
 
 ```bash
 backend/.venv/bin/python scripts/normalize_cicids.py \
+  --input data/raw/CICIDS2017-Monday.csv \
+  --input data/raw/CICIDS2017-Tuesday.csv \
+  --input data/raw/CICIDS2017-Wednesday.csv \
+  --input data/raw/CICIDS2017-Thursday-Morning-WebAttacks.csv \
+  --input data/raw/CICIDS2017-Thursday-Afternoon-Infilteration.csv \
+  --input data/raw/CICIDS2017-Friday-Morning.csv \
   --input data/raw/CICIDS2017-Friday-DDos.csv \
-  --output data/processed/cicids2017_friday_ddos_normalized.csv
+  --input data/raw/CICIDS2017-Friday-PortScan.csv \
+  --output data/processed/cicids2017_full_normalized.csv
 ```
 
 The normalizer converts CICIDS/CICFlowMeter schema into the project IDS schema:
@@ -193,31 +207,31 @@ The normalizer converts CICIDS/CICFlowMeter schema into the project IDS schema:
 
 Validation result:
 
-- `225,745` rows.
+- `2,830,743` rows.
 - `80` columns after normalization.
 - Required columns present: `label`, `attack_cat`.
-- Attack categories: `BENIGN`, `DDoS`.
+- Attack categories: `BENIGN`, `Bot`, `DDoS`, `DoS GoldenEye`, `DoS Hulk`, `DoS Slowhttptest`, `DoS slowloris`, `FTP-Patator`, `Heartbleed`, `Infiltration`, `PortScan`, `SSH-Patator`, `Web Attack Brute Force`, `Web Attack Sql Injection`, `Web Attack XSS`.
 
 Generated local outputs:
 
-- `reports/evaluation/cicids2017-friday-ddos-validation.json`
-- `reports/evaluation/cicids2017-friday-ddos-profile.json`
-- `reports/pipeline/cicids2017-friday-ddos/pipeline-summary.json`
-- `reports/pipeline/cicids2017-friday-ddos/pipeline-report.md`
-- `reports/pipeline/cicids2017-friday-ddos/reports/model-comparison.csv`
-- `reports/pipeline/cicids2017-friday-ddos/metrics/*.json`
-- `reports/pipeline/cicids2017-friday-ddos/figures/*.svg`
-- `reports/pipeline/cicids2017-friday-ddos/reports/feature-importance/*.csv`
+- `reports/evaluation/cicids2017-full-validation.json`
+- `reports/evaluation/cicids2017-full-profile.json`
+- `reports/pipeline/cicids2017-full/pipeline-summary.json`
+- `reports/pipeline/cicids2017-full/pipeline-report.md`
+- `reports/pipeline/cicids2017-full/reports/model-comparison.csv`
+- `reports/pipeline/cicids2017-full/metrics/*.json`
+- `reports/pipeline/cicids2017-full/figures/*.svg`
+- `reports/pipeline/cicids2017-full/reports/feature-importance/*.csv`
 
-Current CICIDS2017 Friday DDoS random-split baseline results are:
+Current full CICIDS2017 random-split baseline results are:
 
 | Model | Accuracy | Precision | Recall | F1-score | False Positive Rate |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Decision Tree | 0.99996 | 0.99996 | 0.99996 | 0.99996 | 0.00005 |
-| Logistic Regression | 0.96494 | 0.95427 | 0.98539 | 0.96958 | 0.06186 |
-| Random Forest | 0.99993 | 0.99996 | 0.99992 | 0.99994 | 0.00005 |
+| Decision Tree | 0.99874 | 0.99683 | 0.99676 | 0.99680 | 0.00078 |
+| Logistic Regression | 0.90134 | 0.87127 | 0.58570 | 0.70050 | 0.02123 |
+| Random Forest | 0.99888 | 0.99721 | 0.99712 | 0.99717 | 0.00068 |
 
-These CICIDS2017 results are useful as a pipeline milestone only. They use one day/attack subset and a generated random split, not the full CICIDS2017 multi-day benchmark protocol. Full thesis claims should use a documented full-dataset or temporal split setup.
+These CICIDS2017 results use the full multi-day CSV collection with a generated stratified random split. They are stronger than the earlier single-day DDoS milestone, but thesis reporting should still clearly state the split protocol and avoid comparing them directly with papers that use temporal or per-day evaluation protocols.
 
 ## Implemented Documentation
 
@@ -254,7 +268,7 @@ cd backend
 Result:
 
 ```text
-44 passed in 8.11s
+46 passed in 9.32s
 ```
 
 ```bash
@@ -265,7 +279,7 @@ npm run build
 Result:
 
 ```text
-✓ built in 149ms
+✓ built in 133ms
 ```
 
 ## Git Status
