@@ -143,3 +143,35 @@ def test_train_models_from_split_csv_evaluates_on_test_file(tmp_path: Path) -> N
     assert results[0]["sample_count"] == 2
     assert (metrics_dir / "split-fixture-decision_tree.json").exists()
     assert (models_dir / "split-fixture-decision_tree.joblib").exists()
+
+
+def test_train_models_from_split_csv_supports_xgboost(tmp_path: Path) -> None:
+    train_path = tmp_path / "train.csv"
+    test_path = tmp_path / "test.csv"
+    metrics_dir = tmp_path / "metrics"
+    models_dir = tmp_path / "trained"
+    train_path.write_text(
+        "feature,label\n"
+        "0,0\n"
+        "1,0\n"
+        "2,0\n"
+        "10,1\n"
+        "11,1\n"
+        "12,1\n",
+        encoding="utf-8",
+    )
+    test_path.write_text("feature,label\n3,0\n13,1\n", encoding="utf-8")
+
+    results = train_models_from_split_csv(
+        dataset_id="xgb-fixture",
+        train_path=train_path,
+        test_path=test_path,
+        metrics_dir=metrics_dir,
+        models_dir=models_dir,
+        model_names=["xgboost"],
+    )
+
+    assert results[0]["model_name"] == "xgboost"
+    assert results[0]["sample_count"] == 2
+    assert (metrics_dir / "xgb-fixture-xgboost.json").exists()
+    assert (models_dir / "xgb-fixture-xgboost.joblib").exists()

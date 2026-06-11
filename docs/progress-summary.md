@@ -162,10 +162,11 @@ After removing attack-category leakage, current official split results are:
 | Decision Tree | 0.5241 | 0.6042 | 0.3932 | 0.4764 | 0.3156 |
 | Logistic Regression | 0.6159 | 0.6313 | 0.7268 | 0.6757 | 0.5201 |
 | Random Forest | 0.5741 | 0.6626 | 0.4614 | 0.5440 | 0.2879 |
+| XGBoost | 0.5294 | 0.5975 | 0.4453 | 0.5103 | 0.3675 |
 
 Current best F1-score is Logistic Regression with `0.6757`.
 
-These results should be treated as baseline results, not final optimized thesis results. Future work should add stronger models, feature selection, scaling, tuning, and explainability.
+These results should be treated as baseline results, not final optimized thesis results. XGBoost has been added but does not outperform Logistic Regression under the current no-tuning setup, so future work should focus on feature scaling, feature selection, hyperparameter tuning, and explainability.
 
 ## CICIDS2017 Work Completed
 
@@ -268,7 +269,7 @@ cd backend
 Result:
 
 ```text
-46 passed in 9.32s
+47 passed in 9.39s
 ```
 
 ```bash
@@ -279,7 +280,7 @@ npm run build
 Result:
 
 ```text
-✓ built in 133ms
+✓ built in 119ms
 ```
 
 ## Git Status
@@ -299,8 +300,7 @@ The latest pushed branch is `main` on `origin`.
 
 Important unfinished work:
 
-- Expand CICIDS2017 from the current Friday DDoS subset to a full multi-day benchmark setup.
-- Add XGBoost or LightGBM model experiments.
+- Add hyperparameter tuning for XGBoost and tree-based models.
 - Add feature scaling and hyperparameter tuning.
 - Add SHAP or LIME explainability.
 - Add Gemini, OpenAI, or Ollama provider adapter for real LLM outputs.

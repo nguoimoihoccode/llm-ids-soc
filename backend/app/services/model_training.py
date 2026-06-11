@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
+from xgboost import XGBClassifier
 
 from app.services.model_metrics import calculate_binary_metrics
 
@@ -88,4 +89,12 @@ def _build_model(model_name: str):
         return DecisionTreeClassifier(random_state=42)
     if model_name == "random_forest":
         return RandomForestClassifier(n_estimators=20, random_state=42)
+    if model_name == "xgboost":
+        return XGBClassifier(
+            n_estimators=50,
+            max_depth=4,
+            learning_rate=0.1,
+            eval_metric="logloss",
+            random_state=42,
+        )
     raise ValueError(f"Unsupported model: {model_name}")
