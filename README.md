@@ -1,7 +1,5 @@
 # LLM-Assisted Intrusion Detection SOC
 
-Prototype for a master's thesis project about network intrusion detection, explainable machine learning, and LLM/RAG-assisted security alert analysis.
-
 The system demonstrates a mini Security Operations Center (SOC) workflow: network-flow events are loaded, suspicious activity is converted into IDS alerts, ML evaluation artifacts are generated, and an LLM-style assistant explains alerts with security playbook context.
 
 ## Why This Project Exists
