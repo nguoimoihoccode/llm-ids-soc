@@ -114,3 +114,14 @@ def test_models_package_reexports_domain_schemas() -> None:
     assert DatasetInfo.__name__ == "DatasetInfo"
     assert InferenceResult.__name__ == "InferenceResult"
     assert NetworkEvent.__name__ == "NetworkEvent"
+
+
+def test_paths_module_exposes_project_roots() -> None:
+    from app.paths import DATA_ROOT, MODELS_ROOT, PLAYBOOKS_ROOT, PROJECT_ROOT, REPORTS_ROOT
+
+    assert (PROJECT_ROOT / "backend").exists()
+    assert (PROJECT_ROOT / "frontend").exists()
+    assert DATA_ROOT.name == "data"
+    assert MODELS_ROOT.name == "models"
+    assert REPORTS_ROOT.name == "reports"
+    assert PLAYBOOKS_ROOT.name == "playbooks"
