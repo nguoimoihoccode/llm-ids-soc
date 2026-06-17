@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -124,3 +126,23 @@ class DatasetValidationResult(BaseModel):
     required_columns: list[str]
     missing_required_columns: list[str]
     errors: list[str]
+
+
+class InferenceModelInfo(BaseModel):
+    dataset_id: str
+    model_name: str
+    model_path: str
+    available: bool
+    status: str
+
+
+class InferenceResult(BaseModel):
+    dataset_id: str
+    model_name: str
+    model_available: bool
+    prediction: int
+    prediction_label: str
+    confidence: float
+    attack_probability: Optional[float]
+    top_features: list[str]
+    status: str
