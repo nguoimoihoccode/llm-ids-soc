@@ -41,6 +41,8 @@ data/raw/
 data/processed/
 data/interim/
 models/
+!backend/app/models/
+!backend/app/models/**
 reports/
 *.csv
 *.tsv

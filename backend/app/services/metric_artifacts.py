@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
 
+from app.paths import MODELS_ROOT
 
-DEFAULT_METRICS_DIR = Path(__file__).resolve().parents[3] / "models" / "metrics"
+
+DEFAULT_METRICS_DIR = MODELS_ROOT / "metrics"
 
 
 def list_metric_artifacts(metrics_dir: Path = DEFAULT_METRICS_DIR) -> list[dict[str, object]]:

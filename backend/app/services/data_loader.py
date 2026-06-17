@@ -2,9 +2,10 @@ import csv
 from pathlib import Path
 
 from app.models import NetworkEvent
+from app.paths import DATA_ROOT
 
 
-SAMPLE_DATA_PATH = Path(__file__).resolve().parents[3] / "data" / "samples" / "network_events.csv"
+SAMPLE_DATA_PATH = DATA_ROOT / "samples" / "network_events.csv"
 
 
 def load_sample_events(path: Path = SAMPLE_DATA_PATH) -> list[NetworkEvent]:

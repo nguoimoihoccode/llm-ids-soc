@@ -6,17 +6,10 @@ import joblib
 import pandas as pd
 
 from app.models import InferenceModelInfo, InferenceResult
+from app.paths import REPORTS_ROOT
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_MODEL_PATH = (
-    PROJECT_ROOT
-    / "reports"
-    / "pipeline"
-    / "cicids2017-full"
-    / "models"
-    / "cicids2017-full-random_forest.joblib"
-)
+DEFAULT_MODEL_PATH = REPORTS_ROOT / "pipeline" / "cicids2017-full" / "models" / "cicids2017-full-random_forest.joblib"
 
 
 @dataclass(frozen=True)

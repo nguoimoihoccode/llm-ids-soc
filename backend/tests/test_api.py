@@ -101,3 +101,16 @@ def test_datasets_endpoint_returns_registry() -> None:
     body = response.json()
     assert [dataset["dataset_id"] for dataset in body] == ["sample", "unsw-nb15", "cicids2017"]
     assert body[0]["source_url"] == "local sample data"
+
+
+def test_models_package_reexports_domain_schemas() -> None:
+    import app.models as models_package
+
+    assert hasattr(models_package, "__path__")
+
+    from app.models import Alert, DatasetInfo, InferenceResult, NetworkEvent
+
+    assert Alert.__name__ == "Alert"
+    assert DatasetInfo.__name__ == "DatasetInfo"
+    assert InferenceResult.__name__ == "InferenceResult"
+    assert NetworkEvent.__name__ == "NetworkEvent"

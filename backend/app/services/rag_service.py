@@ -1,7 +1,7 @@
-from pathlib import Path
+from app.paths import PLAYBOOKS_ROOT
 
 
-PLAYBOOK_DIR = Path(__file__).resolve().parents[3] / "knowledge_base" / "playbooks"
+PLAYBOOK_DIR = PLAYBOOKS_ROOT
 
 
 def retrieve_context(attack_type: str) -> str:
