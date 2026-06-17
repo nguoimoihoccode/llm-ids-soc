@@ -57,6 +57,26 @@ type ModelMetric = {
   false_positive_rate: number;
 };
 
+type InferenceModelInfo = {
+  dataset_id: string;
+  model_name: string;
+  model_path: string;
+  available: boolean;
+  status: string;
+};
+
+type InferenceResult = {
+  dataset_id: string;
+  model_name: string;
+  model_available: boolean;
+  prediction: number;
+  prediction_label: string;
+  confidence: number;
+  attack_probability: number | null;
+  top_features: string[];
+  status: string;
+};
+
 const sampleAlerts: Alert[] = [
   {
     alert_id: "alert-evt-002",
@@ -93,23 +113,31 @@ function App() {
   const [explanation, setExplanation] = useState<Explanation | null>(null);
   const [comparison, setComparison] = useState<ExplanationComparison | null>(null);
   const [modelMetrics, setModelMetrics] = useState<ModelMetric[]>([]);
+  const [inferenceModel, setInferenceModel] = useState<InferenceModelInfo | null>(null);
+  const [inferenceResult, setInferenceResult] = useState<InferenceResult | null>(null);
   const selected = alerts[0];
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        // Lay dong thoi alert, evaluation va metric de dashboard co du lieu day du.
-        const [alertsResponse, evaluationResponse, metricsResponse] = await Promise.all([
+        // Lay dong thoi alert, evaluation, metric va inference de dashboard co du lieu day du.
+        const [alertsResponse, evaluationResponse, metricsResponse, inferenceModelResponse, inferenceSampleResponse] = await Promise.all([
           fetch("http://localhost:8000/alerts"),
           fetch("http://localhost:8000/ml/evaluate"),
           fetch("http://localhost:8000/ml/metrics"),
+          fetch("http://localhost:8000/ml/inference/default-model"),
+          fetch("http://localhost:8000/ml/inference/sample"),
         ]);
         const nextAlerts = (await alertsResponse.json()) as Alert[];
         const nextEvaluation = (await evaluationResponse.json()) as Evaluation;
         const nextModelMetrics = (await metricsResponse.json()) as ModelMetric[];
+        const nextInferenceModel = (await inferenceModelResponse.json()) as InferenceModelInfo;
+        const nextInferenceResult = (await inferenceSampleResponse.json()) as InferenceResult;
         setAlerts(nextAlerts);
         setEvaluation(nextEvaluation);
         setModelMetrics(nextModelMetrics);
+        setInferenceModel(nextInferenceModel);
+        setInferenceResult(nextInferenceResult);
 
         if (nextAlerts[0]) {
           // Chi can mot alert dau tien de minh hoa phan giai thich va comparison.
@@ -136,6 +164,24 @@ function App() {
           { model_name: "decision_tree", dataset_id: "fixture", accuracy: 1, precision: 1, recall: 1, f1_score: 1, false_positive_rate: 0 },
           { model_name: "random_forest", dataset_id: "fixture", accuracy: 1, precision: 1, recall: 1, f1_score: 1, false_positive_rate: 0 },
         ]);
+        setInferenceModel({
+          dataset_id: "cicids2017-full",
+          model_name: "random_forest",
+          model_path: "reports/pipeline/cicids2017-full/models/cicids2017-full-random_forest.joblib",
+          available: false,
+          status: "backend unavailable",
+        });
+        setInferenceResult({
+          dataset_id: "cicids2017-full",
+          model_name: "random_forest",
+          model_available: false,
+          prediction: 0,
+          prediction_label: "unavailable",
+          confidence: 0,
+          attack_probability: null,
+          top_features: [],
+          status: "backend unavailable",
+        });
       }
     }
 
@@ -215,6 +261,31 @@ function App() {
             ))}
           </tbody>
         </table>
+      </section>
+
+      <section className="panel inference-panel">
+        <h2>Model Inference</h2>
+        <div className="inference-grid">
+          <article>
+            <span>Default Model</span>
+            <strong>{inferenceModel?.dataset_id ?? "cicids2017-full"} / {inferenceModel?.model_name ?? "random_forest"}</strong>
+            <p>{inferenceModel?.status ?? "not loaded"}</p>
+          </article>
+          <article>
+            <span>Sample Prediction</span>
+            <strong>{inferenceResult?.prediction_label ?? "unavailable"}</strong>
+            <p>Confidence: {formatPercent(inferenceResult?.confidence ?? 0)}</p>
+          </article>
+          <article>
+            <span>Attack Probability</span>
+            <strong>{inferenceResult?.attack_probability === null || inferenceResult?.attack_probability === undefined ? "n/a" : formatPercent(inferenceResult.attack_probability)}</strong>
+            <p>{inferenceResult?.model_available ? "CICIDS2017 artifact loaded" : inferenceResult?.status ?? "model unavailable"}</p>
+          </article>
+        </div>
+        <div className="feature-list">
+          <span>Model features</span>
+          {(inferenceResult?.top_features.length ? inferenceResult.top_features : ["artifact unavailable"]).map((feature) => <code key={feature}>{feature}</code>)}
+        </div>
       </section>
 
       <section className="panel comparison-panel">
