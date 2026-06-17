@@ -68,6 +68,33 @@ def test_ml_metrics_endpoint_returns_saved_artifacts() -> None:
     assert "random_forest" in model_names
 
 
+def test_default_inference_model_endpoint_reports_cicids2017_model() -> None:
+    response = client.get("/ml/inference/default-model")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["dataset_id"] == "cicids2017-full"
+    assert payload["model_name"] == "random_forest"
+    assert "cicids2017-full-random_forest.joblib" in payload["model_path"]
+    assert isinstance(payload["available"], bool)
+    assert isinstance(payload["status"], str)
+
+
+def test_sample_inference_endpoint_returns_structured_result() -> None:
+    response = client.get("/ml/inference/sample")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["dataset_id"] == "cicids2017-full"
+    assert payload["model_name"] == "random_forest"
+    assert isinstance(payload["model_available"], bool)
+    assert isinstance(payload["prediction"], int)
+    assert isinstance(payload["prediction_label"], str)
+    assert isinstance(payload["confidence"], float)
+    assert "top_features" in payload
+    assert isinstance(payload["status"], str)
+
+
 def test_datasets_endpoint_returns_registry() -> None:
     response = client.get("/datasets")
     assert response.status_code == 200
