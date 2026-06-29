@@ -16,6 +16,7 @@ from app.services.feature_importance_export import export_feature_importance_csv
 from app.services.model_training import train_models_from_split_csv  # noqa: E402
 from app.services.preprocessing import preprocess_unsw_nb15_csv  # noqa: E402
 from app.services.report_export import export_model_comparison_csv  # noqa: E402
+from app.services.shap_export import export_shap_summary_plots, export_shap_instance_values  # noqa: E402
 
 
 def main() -> None:
@@ -39,6 +40,11 @@ def main() -> None:
     reports_dir = output_dir / "reports"
     for directory in [figures_dir, raw_dir, processed_dir, metrics_dir, models_dir, reports_dir]:
         directory.mkdir(parents=True, exist_ok=True)
+
+    shap_plots_dir = output_dir / "shap" / "plots"
+    shap_instances_dir = output_dir / "shap" / "instances"
+    shap_plots_dir.mkdir(parents=True, exist_ok=True)
+    shap_instances_dir.mkdir(parents=True, exist_ok=True)
 
     profile_path = reports_dir / "dataset-profile.json"
     split_summary_path = reports_dir / "dataset-split-summary.json"
@@ -106,6 +112,19 @@ def main() -> None:
         reports_dir / "feature-importance",
     )
 
+    shap_plot_paths = export_shap_summary_plots(
+        args.dataset_id,
+        processed_test_path,
+        models_dir,
+        shap_plots_dir,
+    )
+    shap_instance_paths = export_shap_instance_values(
+        args.dataset_id,
+        processed_test_path,
+        models_dir,
+        shap_instances_dir,
+    )
+
     summary = {
         "dataset_id": args.dataset_id,
         "split_mode": split_mode,
@@ -115,6 +134,8 @@ def main() -> None:
         "model_comparison_path": str(comparison_path),
         "confusion_matrix_paths": [str(path) for path in confusion_matrix_paths],
         "feature_importance_paths": [str(path) for path in feature_importance_paths],
+        "shap_plot_paths": [str(path) for path in shap_plot_paths],
+        "shap_instance_paths": [str(path) for path in shap_instance_paths],
         "processed_train_path": str(processed_train_path),
         "processed_test_path": str(processed_test_path),
         "metrics_dir": str(metrics_dir),
@@ -130,6 +151,8 @@ def main() -> None:
         "Model comparison": str(comparison_path),
         "Confusion matrices": [str(path) for path in confusion_matrix_paths],
         "Feature importance": [str(path) for path in feature_importance_paths],
+        "SHAP summary plots": [str(path) for path in shap_plot_paths],
+        "SHAP instance explanations": [str(path) for path in shap_instance_paths],
         "Metrics directory": str(metrics_dir),
         "Models directory": str(models_dir),
     }

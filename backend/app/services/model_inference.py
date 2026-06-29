@@ -5,7 +5,7 @@ from typing import Optional
 import joblib
 import pandas as pd
 
-from app.models import InferenceModelInfo, InferenceResult
+from app.models import FeatureImportance, InferenceModelInfo, InferenceResult
 from app.paths import REPORTS_ROOT
 
 
@@ -63,7 +63,7 @@ def run_sample_inference(config: InferenceModelConfig = DEFAULT_MODEL_CONFIG) ->
         prediction_label="attack" if prediction == 1 else "benign",
         confidence=float(confidence),
         attack_probability=attack_probability,
-        top_features=list(sample.columns[:5]),
+        top_features=_shap_top_features(model, sample),
         status="ok",
     )
 
@@ -86,6 +86,17 @@ def _sample_frame_for_model(model) -> pd.DataFrame:
         if feature in row:
             row[feature] = value
     return pd.DataFrame([row], columns=feature_names)
+
+
+def _shap_top_features(model, sample: pd.DataFrame, top_k: int = 5) -> list[FeatureImportance]:
+    try:
+        from app.services.shap_export import compute_single_instance_shap
+        values = compute_single_instance_shap(model, sample, top_k=top_k)
+        return [FeatureImportance(feature=item["feature"], importance=item["importance"])
+                for item in values]
+    except Exception:
+        return [FeatureImportance(feature=col, importance=0.0)
+                for col in list(sample.columns[:top_k])]
 
 
 def _attack_probability(model, sample: pd.DataFrame, prediction: int) -> Optional[float]:

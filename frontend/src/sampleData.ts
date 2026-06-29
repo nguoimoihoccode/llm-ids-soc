@@ -1,4 +1,4 @@
-import type { Alert, Evaluation, InferenceModelInfo, InferenceResult, ModelMetric } from "./types";
+import type { Alert, Evaluation, FeatureImportance, InferenceModelInfo, InferenceResult, ModelMetric } from "./types";
 
 export const sampleAlerts: Alert[] = [
   {

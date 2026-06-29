@@ -152,7 +152,25 @@ function App() {
         </div>
         <div className="feature-list">
           <span>Model features</span>
-          {(inferenceResult?.top_features.length ? inferenceResult.top_features : ["artifact unavailable"]).map((feature) => <code key={feature}>{feature}</code>)}
+          {inferenceResult?.top_features.length ? (
+            inferenceResult.top_features.map((fi) => (
+              <div key={fi.feature} className="feature-bar">
+                <span className="feature-name">{fi.feature}</span>
+                <div className="feature-bar-track">
+                  <div
+                    className="feature-bar-fill"
+                    style={{
+                      width: `${Math.min(Math.abs(fi.importance) * 100, 100)}%`,
+                      backgroundColor: fi.importance > 0 ? "#e74c3c" : "#3498db",
+                    }}
+                  />
+                </div>
+                <span className="feature-value">{fi.importance.toFixed(4)}</span>
+              </div>
+            ))
+          ) : (
+            <code>artifact unavailable</code>
+          )}
         </div>
       </section>
 

@@ -55,6 +55,10 @@ def test_dataset_pipeline_script_runs_profile_split_preprocess_and_train(tmp_pat
     assert "pipeline-fixture,decision_tree" in comparison
     assert (output_dir / "figures" / "pipeline-fixture-decision_tree-confusion-matrix.svg").exists()
     assert (output_dir / "reports" / "feature-importance" / "pipeline-fixture-decision_tree-feature-importance.csv").exists()
+    assert (output_dir / "shap" / "plots" / "pipeline-fixture-decision_tree-shap-summary.svg").exists()
+    assert (output_dir / "shap" / "instances" / "pipeline-fixture-decision_tree-shap-instances.json").exists()
+    assert "shap_plot_paths" in summary
+    assert "shap_instance_paths" in summary
     report = (output_dir / "pipeline-report.md").read_text(encoding="utf-8")
     assert "# Dataset Pipeline Report" in report
     assert "pipeline-fixture" in report
@@ -64,6 +68,8 @@ def test_dataset_pipeline_script_runs_profile_split_preprocess_and_train(tmp_pat
     assert "model-comparison.csv" in report
     assert "confusion-matrix.svg" in report
     assert "feature-importance.csv" in report
+    assert "SHAP summary plots" in report
+    assert "SHAP instance explanations" in report
 
 
 def test_dataset_pipeline_script_accepts_explicit_train_test_inputs(tmp_path: Path) -> None:

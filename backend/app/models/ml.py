@@ -3,6 +3,11 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class FeatureImportance(BaseModel):
+    feature: str
+    importance: float
+
+
 class ModelEvaluation(BaseModel):
     # Ket qua danh gia mau cho baseline rule-based.
     model_name: str
@@ -28,5 +33,5 @@ class InferenceResult(BaseModel):
     prediction_label: str
     confidence: float
     attack_probability: Optional[float]
-    top_features: list[str]
+    top_features: list[FeatureImportance]
     status: str

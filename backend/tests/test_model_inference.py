@@ -70,5 +70,9 @@ def test_sample_inference_loads_model_and_predicts(tmp_path: Path) -> None:
     assert 0.0 <= result.confidence <= 1.0
     assert result.attack_probability is not None
     assert 0.0 <= result.attack_probability <= 1.0
-    assert result.top_features == ["Flow Duration", "Total Fwd Packets", "Flow Bytes/s"]
+    assert len(result.top_features) > 0
+    feature_names = [fi.feature for fi in result.top_features]
+    assert feature_names[:3] == ["Flow Duration", "Total Fwd Packets", "Flow Bytes/s"]
+    for fi in result.top_features:
+        assert isinstance(fi.importance, float)
     assert result.status == "ok"

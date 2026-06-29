@@ -61,6 +61,11 @@ export type InferenceModelInfo = {
   status: string;
 };
 
+export type FeatureImportance = {
+  feature: string;
+  importance: number;
+};
+
 export type InferenceResult = {
   dataset_id: string;
   model_name: string;
@@ -69,6 +74,6 @@ export type InferenceResult = {
   prediction_label: string;
   confidence: number;
   attack_probability: number | null;
-  top_features: string[];
+  top_features: FeatureImportance[];
   status: string;
 };
