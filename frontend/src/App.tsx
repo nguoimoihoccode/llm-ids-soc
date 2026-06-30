@@ -18,7 +18,6 @@ import type {
 } from "./types";
 
 function App() {
-  // Frontend uu tien du lieu that tu backend, neu loi thi dung sample fallback.
   const [alerts, setAlerts] = useState(sampleAlerts);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [explanation, setExplanation] = useState<Explanation | null>(null);
@@ -31,7 +30,6 @@ function App() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        // Lay dong thoi alert, evaluation, metric va inference de dashboard co du lieu day du.
         const dashboardData = await loadDashboardData();
         setAlerts(dashboardData.alerts);
         setEvaluation(dashboardData.evaluation);
@@ -40,12 +38,10 @@ function App() {
         setInferenceResult(dashboardData.inferenceResult);
 
         if (dashboardData.alerts[0]) {
-          // Chi can mot alert dau tien de minh hoa phan giai thich va comparison.
           setExplanation(await loadAlertExplanation(dashboardData.alerts[0].alert_id));
           setComparison(await loadAlertExplanationComparison(dashboardData.alerts[0].alert_id));
         }
       } catch {
-        // Neu backend chua chay, hien du lieu mau de giao dien van demo duoc.
         setEvaluation(fallbackEvaluation);
         setModelMetrics(fallbackModelMetrics);
         setInferenceModel(fallbackInferenceModel);
@@ -55,6 +51,11 @@ function App() {
 
     loadDashboard();
   }, []);
+
+  const severityCounts = alerts.reduce<Record<string, number>>((acc, a) => {
+    acc[a.severity] = (acc[a.severity] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <main className="shell">
@@ -66,8 +67,14 @@ function App() {
 
       <section className="cards">
         <article><span>Total Alerts</span><strong>{alerts.length}</strong></article>
-        <article><span>High Severity</span><strong>{alerts.filter((alert) => alert.severity === "High").length}</strong></article>
+        <article><span>High Severity</span><strong>{alerts.filter((a) => a.severity === "High").length}</strong></article>
         <article><span>Accuracy</span><strong>{evaluation ? Math.round(evaluation.accuracy * 100) : 0}%</strong></article>
+      </section>
+
+      <section className="charts-row">
+        <SeverityChart counts={severityCounts} />
+        <ModelF1Chart metrics={modelMetrics} />
+        <AttackTypeChart alerts={alerts} />
       </section>
 
       <section className="grid">
@@ -90,7 +97,12 @@ function App() {
         </div>
 
         <div className="panel analysis">
-          <h2>LLM Analysis</h2>
+          <div className="panel-header">
+            <h2>LLM Analysis</h2>
+            <button className="btn-export" onClick={() => exportIncidentReport(selected, explanation)}>
+              Export Report
+            </button>
+          </div>
           <p><strong>{selected.attack_type}</strong> from {selected.src_ip} to {selected.dst_ip}</p>
           <p className="provider">
             MITRE: {explanation?.mitre_technique ?? selected.mitre_technique} | Priority: {explanation?.triage_priority ?? selected.triage_priority}
@@ -132,7 +144,7 @@ function App() {
       </section>
 
       <section className="panel inference-panel">
-        <h2>Model Inference</h2>
+        <h2>Model Inference — Why This Alert?</h2>
         <div className="inference-grid">
           <article>
             <span>Default Model</span>
@@ -151,7 +163,7 @@ function App() {
           </article>
         </div>
         <div className="feature-list">
-          <span>Model features</span>
+          <span>Top contributing features (SHAP)</span>
           {inferenceResult?.top_features.length ? (
             inferenceResult.top_features.map((fi) => (
               <div key={fi.feature} className="feature-bar">
@@ -182,6 +194,12 @@ function App() {
               <span>{item.mode}</span>
               <strong>{item.uses_rag ? "RAG" : "No RAG"}</strong>
               <p>{item.summary}</p>
+              {item.knowledge_context && (
+                <details className="rag-context">
+                  <summary>Retrieved context</summary>
+                  <pre>{item.knowledge_context}</pre>
+                </details>
+              )}
             </article>
           ))}
         </div>
@@ -190,8 +208,115 @@ function App() {
   );
 }
 
+function SeverityChart({ counts }: { counts: Record<string, number> }) {
+  const max = Math.max(...Object.values(counts), 1);
+  const colors: Record<string, string> = { High: "#e74c3c", Medium: "#f39c12", Low: "#3498db" };
+  return (
+    <div className="panel chart-panel">
+      <h2>Severity Distribution</h2>
+      {Object.entries(counts).map(([severity, count]) => (
+        <div key={severity} className="chart-bar-row">
+          <span className="chart-label">{severity}</span>
+          <div className="chart-bar-track">
+            <div
+              className="chart-bar-fill"
+              style={{ width: `${(count / max) * 100}%`, backgroundColor: colors[severity] || "#67e8f9" }}
+            />
+          </div>
+          <span className="chart-value">{count}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ModelF1Chart({ metrics }: { metrics: ModelMetric[] }) {
+  if (!metrics.length) return null;
+  const max = Math.max(...metrics.map((m) => m.f1_score), 0.01);
+  return (
+    <div className="panel chart-panel">
+      <h2>F1 Score by Model</h2>
+      {metrics.map((m) => (
+        <div key={`${m.dataset_id}-${m.model_name}`} className="chart-bar-row">
+          <span className="chart-label">{m.model_name}</span>
+          <div className="chart-bar-track">
+            <div
+              className="chart-bar-fill chart-fill-green"
+              style={{ width: `${(m.f1_score / max) * 100}%` }}
+            />
+          </div>
+          <span className="chart-value">{m.f1_score.toFixed(3)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AttackTypeChart({ alerts }: { alerts: { attack_type: string }[] }) {
+  const counts = alerts.reduce<Record<string, number>>((acc, a) => {
+    acc[a.attack_type] = (acc[a.attack_type] || 0) + 1;
+    return acc;
+  }, {});
+  const max = Math.max(...Object.values(counts), 1);
+  return (
+    <div className="panel chart-panel">
+      <h2>Attack Types</h2>
+      {Object.entries(counts).map(([type, count]) => (
+        <div key={type} className="chart-bar-row">
+          <span className="chart-label">{type}</span>
+          <div className="chart-bar-track">
+            <div
+              className="chart-bar-fill chart-fill-purple"
+              style={{ width: `${(count / max) * 100}%` }}
+            />
+          </div>
+          <span className="chart-value">{count}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function exportIncidentReport(alert: typeof sampleAlerts[0], explanation: Explanation | null) {
+  const lines = [
+    "# Incident Report",
+    "",
+    `**Alert ID**: ${alert.alert_id}`,
+    `**Timestamp**: ${alert.timestamp}`,
+    `**Attack Type**: ${alert.attack_type}`,
+    `**Source**: ${alert.src_ip} → ${alert.dst_ip}`,
+    `**Severity**: ${alert.severity}`,
+    `**Confidence**: ${Math.round(alert.confidence * 100)}%`,
+    `**MITRE ATT&CK**: ${alert.mitre_technique}`,
+    `**Triage Priority**: ${alert.triage_priority}`,
+    "",
+    "## Analysis",
+    "",
+    explanation?.summary ?? alert.reason,
+    "",
+    "## Evidence Features",
+    "",
+    ...(explanation?.evidence_features ?? alert.top_features).map((f) => `- ${f}`),
+    "",
+    "## Recommended Response",
+    "",
+    ...(explanation?.recommended_response ?? ["Escalate to analyst review."]).map((r) => `- ${r}`),
+    "",
+    "## Provider",
+    "",
+    explanation?.provider ?? "local-template",
+    "",
+  ];
+  const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `incident-${alert.alert_id}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function formatPercent(value: number) {
-  // Convert so 0-1 thanh phan tram de doc de hon tren UI.
   return `${Math.round(value * 100)}%`;
 }
 
