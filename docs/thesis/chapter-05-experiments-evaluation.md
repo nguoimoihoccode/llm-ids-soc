@@ -46,13 +46,12 @@ Key software components:
 
 ### 5.3.2 Dataset Setup
 
-The evaluation uses three dataset levels.
+The evaluation uses two benchmark datasets and a fixture for pipeline validation.
 
 Fixture data is located in:
 
 ```text
 data/samples/unsw_nb15_fixture.csv
-data/processed/unsw_nb15_fixture_processed.csv
 ```
 
 The fixture contains a small number of samples and is used only to validate the experimental pipeline.
@@ -60,20 +59,17 @@ The fixture contains a small number of samples and is used only to validate the 
 UNSW-NB15 is used as the primary benchmark with its published train/test split:
 
 ```text
-data/raw/UNSW_NB15_training-set.csv
-data/raw/UNSW_NB15_testing-set.csv
+data/raw/UNSW_NB15_training-set.csv  (175,341 rows, 45 columns)
+data/raw/UNSW_NB15_testing-set.csv   (82,332 rows, 45 columns)
 ```
 
-CICIDS2017 is used as a secondary benchmark after normalizing and merging the public multi-day CICFlowMeter CSV files:
+CICIDS2017 is used as a secondary benchmark after normalizing and merging the public multi-day CICFlowMeter CSV files into the project schema:
 
 ```text
-data/processed/cicids2017_full_normalized.csv
+data/processed/cicids2017_full_normalized.csv  (2,830,743 rows, 80 columns)
 ```
 
-The current benchmark evaluation uses:
-
-- UNSW-NB15 as the primary dataset.
-- CICIDS2017 as the secondary dataset.
+The attack-category field (`attack_cat`) is used for profiling and reporting only. It is explicitly dropped before feature encoding to prevent label leakage — a research-quality issue that was identified and fixed during development. A regression test verifies that no `attack_cat_*` columns appear in processed features.
 
 ### 5.3.3 Models Evaluated
 
@@ -83,8 +79,18 @@ The current baseline models are:
 - Logistic Regression with StandardScaler.
 - Decision Tree.
 - Random Forest.
-- XGBoost.
-- Tuned XGBoost configuration.
+- XGBoost (default configuration).
+- XGBoost Tuned (hyperparameter-optimized via RandomizedSearchCV).
+
+Hyperparameter tuning is implemented as a separate pipeline step using `RandomizedSearchCV` with 3-fold cross-validation and F1 scoring. The tuning script supports all model types with per-model parameter grids including regularization strength (C), tree depth, ensemble size, learning rate, subsampling ratio, and regularization parameters. Best parameters are saved as JSON artifacts and can be loaded by the training pipeline via `--tuning-dir`.
+
+```bash
+backend/.venv/bin/python scripts/tune_hyperparameters.py \
+  --processed-train-path data/processed/unsw_nb15_train_processed.csv \
+  --output-dir reports/evaluation/tuning \
+  --models xgboost,random_forest,decision_tree,logistic_regression_scaled \
+  --n-iter 40 --cv 3
+```
 
 These models were selected because they represent simple, interpretable, tree-based, ensemble, and boosted supervised learning baselines for tabular IDS data.
 
@@ -95,10 +101,17 @@ The LLM/RAG evaluation compares three explanation modes:
 | Mode | Description |
 |---|---|
 | Template | Deterministic explanation using alert fields only |
-| LLM without RAG | LLM-style explanation using alert context but no retrieved playbook |
-| LLM with RAG | LLM-style explanation using alert context and retrieved playbook context |
+| LLM without RAG | LLM-generated explanation using alert context but no retrieved playbook |
+| LLM with RAG | LLM-generated explanation using alert context and retrieved playbook context |
 
-The current implementation uses a deterministic local-template provider. The system is structured so that external LLM providers such as Gemini, OpenAI, or Ollama can be added later.
+The system supports a pluggable LLM provider architecture with the following backends:
+
+- **LocalTemplateProvider** (default): Deterministic, no external API dependency. Returns the prompt as-is for testing and offline evaluation.
+- **OpenAIProvider**: GPT-4o-mini via OpenAI API. Configured via `OPENAI_API_KEY`.
+- **GeminiProvider**: Gemini 2.0 Flash via Google Generative AI SDK. Configured via `GEMINI_API_KEY`.
+- **OllamaProvider**: Local models (e.g., Llama 3) via Ollama. Configured via `OLLAMA_BASE_URL`.
+
+The provider is selected via the `LLM_PROVIDER` environment variable. Each provider implements a common `LLMProvider` interface with a `generate(prompt)` method. Tests are written against the deterministic local-template provider so they do not require external API calls.
 
 ## 5.4 IDS Evaluation Methodology
 
@@ -205,24 +218,43 @@ fixture-random_forest-confusion-matrix.svg
 
 These figures are useful in the thesis because they show the distribution of true positives, false positives, true negatives, and false negatives for each model.
 
-## 5.7 Feature Importance Artifacts
+## 5.7 Explainability Artifacts
+
+### 5.7.1 Feature Importance
 
 Feature importance reports are exported to:
 
 ```text
-reports/evaluation/feature-importance/
+reports/pipeline/{dataset-id}/reports/feature-importance/
 ```
 
-Generated fixture reports include:
+Generated reports include per-model CSV files listing each feature and its importance score. Tree-based models (Decision Tree, Random Forest, XGBoost) provide native `feature_importances_` scores. These scores identify which features contributed most strongly to model decisions.
+
+### 5.7.2 SHAP Explanations
+
+SHAP (SHapley Additive exPlanations) is integrated to provide instance-level and global model explainability. The system supports TreeExplainer for tree-based models, LinearExplainer for Logistic Regression, and KernelExplainer as a fallback.
+
+**Global SHAP summary plots** visualize the overall impact of each feature on model predictions across a sample of the test set:
+
+```bash
+backend/.venv/bin/python scripts/export_shap_explanations.py \
+  --dataset-id cicids2017-full \
+  --processed-path data/processed/cicids2017_test_processed.csv \
+  --models-dir reports/pipeline/cicids2017-full/models \
+  --output-dir reports/pipeline/cicids2017-full/shap
+```
+
+**Per-instance SHAP values** are exported as JSON, recording for each test instance the true label, predicted label, and top contributing features with their SHAP values and direction (toward "attack" or "benign").
+
+**Real-time SHAP in inference**: The model inference endpoint computes SHAP values for each sample prediction. The `top_features` field in `InferenceResult` now carries ranked `FeatureImportance` objects (feature name + SHAP value) instead of plain column names. The SOC dashboard renders these as weighted bar charts, showing the analyst which features pushed the prediction toward attack (red) or benign (blue).
 
 ```text
-fixture-decision_tree-feature-importance.csv
-fixture-random_forest-feature-importance.csv
+FeatureImportance schema:
+  feature: "Flow Bytes/s"
+  importance: 0.0823  (positive = toward attack, negative = toward benign)
 ```
 
-Feature importance supports the explainability objective of the thesis. Tree-based models provide importance scores that identify which features contributed most strongly to model decisions. These scores can later be connected with alert `top_features` and used to support analyst explanations.
-
-Logistic Regression is not included in the feature importance export because the current implementation focuses on tree-model `feature_importances_`. Coefficient-based explanations for Logistic Regression can be added in future work.
+This connects model-level explainability (global SHAP) with alert-level explainability (per-instance SHAP), supporting the thesis claim that analysts can understand *why* a specific alert was classified as suspicious.
 
 ## 5.8 Alert Intelligence Evaluation
 
@@ -255,11 +287,25 @@ The LLM/RAG evaluation pipeline follows these steps:
 ```text
 Alert
         -> template explanation
-        -> LLM-style explanation without RAG
-        -> LLM-style explanation with RAG
+        -> LLM-generated explanation without RAG
+        -> LLM-generated explanation with RAG
         -> rubric scoring
         -> summary and case study reports
 ```
+
+The RAG retrieval layer has two operating modes:
+
+1. **Keyword-based retrieval** (default): Matches the alert's attack type to a playbook filename (e.g., `brute-force.md`). Simple, deterministic, and always available.
+
+2. **Vector-based semantic retrieval**: Chunks all playbook markdown files, computes embeddings using sentence-transformers (`all-MiniLM-L6-v2`) or TF-IDF as a fallback, and retrieves top-k relevant chunks via cosine similarity. The vector index is pre-built using:
+
+```bash
+backend/.venv/bin/python scripts/build_vector_index.py \
+  --playbook-dir knowledge_base/playbooks \
+  --output-dir knowledge_base/vector_index
+```
+
+The `rag_service.py` module attempts vector retrieval first, then falls back to exact filename lookup if the index is not available. This layered design ensures the system works immediately after setup (keyword mode) and gains semantic retrieval capability when the vector index is built.
 
 The rubric criteria are:
 
@@ -333,11 +379,27 @@ The case study report supports qualitative analysis and can be used in the thesi
 
 ## 5.13 Discussion Of Current Results
 
-The current results demonstrate that the project pipeline works end-to-end. The system can preprocess data, train models, export metrics, generate explainability artifacts, enrich alerts, compare explanation modes, score LLM outputs, and produce case study reports.
+The current results demonstrate that the project pipeline works end-to-end across two benchmark datasets. The system can:
 
-The fixture dataset results are intentionally simple. They validate correctness of the workflow rather than proving final model performance. The main value of the current results is that they establish a reproducible experimental framework that can be scaled to full IDS datasets.
+1. Validate and profile raw IDS datasets.
+2. Normalize heterogeneous schemas (CICFlowMeter to project schema).
+3. Preprocess data while preventing label leakage (`attack_cat` exclusion).
+4. Train five supervised model types with standardized metric export.
+5. Tune hyperparameters via RandomizedSearchCV with reproducible parameter artifacts.
+6. Export model metrics, confusion matrix SVGs, and feature importance CSVs.
+7. Generate global SHAP summary plots and per-instance SHAP explanations.
+8. Enrich alerts with severity, confidence, MITRE ATT&CK mapping, and triage priority.
+9. Connect SHAP feature contributions to alert evidence in the dashboard.
+10. Compare three explanation modes (template, no-RAG, RAG) with a pluggable LLM provider architecture.
+11. Retrieve security context via keyword-based or vector-based semantic search over local playbooks.
+12. Score explanation quality using a multi-criterion rubric.
+13. Export incident case studies and RAG vs no-RAG summary reports.
 
-The LLM/RAG results also demonstrate the evaluation methodology. The RAG-assisted mode receives stronger groundedness because it includes retrieved playbook context. This supports the thesis direction, but final claims should be based on larger incident sets and possibly human evaluation.
+The strongest UNSW-NB15 baseline is Logistic Regression with StandardScaler at F1=0.7647. The strongest CICIDS2017 baseline is Random Forest at F1=0.9972. The gap between datasets highlights the importance of multi-dataset evaluation and cautions against over-claiming based on a single benchmark.
+
+The RAG-assisted explanation mode achieves stronger groundedness scores because it includes retrieved playbook context. The SHAP integration makes alert-level explainability concrete: each prediction is accompanied by ranked feature contributions showing which features pushed the decision toward attack or benign.
+
+The current implementation uses a deterministic local-template LLM provider by default. The provider abstraction is ready for OpenAI, Gemini, or Ollama backends when API keys are configured. This design preserves reproducibility while enabling future experiments with real LLM outputs.
 
 ## 5.14 Threats To Validity
 
@@ -345,20 +407,32 @@ Several threats to validity must be considered.
 
 ### 5.14.1 Dataset Validity
 
-The current fixture dataset is too small for final conclusions. Full experiments must use larger public datasets such as UNSW-NB15 and CICIDS2017.
+The project evaluates two public benchmark datasets (UNSW-NB15 and CICIDS2017) with different characteristics. UNSW-NB15 uses a published train/test split; CICIDS2017 uses a generated stratified random split. Random splits on CICIDS2017 may place similar flows in both training and testing sets, inflating apparent performance. A temporal or day-based split would be a stronger generalization test.
 
 ### 5.14.2 Model Generalization
 
-Models trained on one public dataset may not generalize to real enterprise networks. Dataset bias and class imbalance may affect results.
+Models trained on public datasets may not generalize to real enterprise networks. Dataset bias, class imbalance, and protocol distribution differences between academic benchmarks and production traffic remain open concerns. The gap between UNSW-NB15 (best F1=0.7647) and CICIDS2017 (best F1=0.9972) illustrates this point.
 
-### 5.14.3 LLM Evaluation Bias
+### 5.14.3 Label Leakage Control
 
-The current rubric is deterministic and useful for pipeline validation. Final evaluation should include more incident cases and, if possible, expert review.
+The `attack_cat` field, which encodes attack family labels, is explicitly dropped before feature encoding. A regression test enforces this. Without this control, models could achieve misleading near-perfect metrics by learning the attack category as a feature.
 
-### 5.14.4 RAG Knowledge Quality
+### 5.14.4 LLM Evaluation Bias
 
-The quality of RAG output depends on the quality of retrieved playbooks. Future work should include a richer security knowledge base.
+The deterministic rubric is useful for pipeline validation but does not substitute for human expert review. Future work should include at least one external evaluator scoring explanation quality across a representative set of 10-20 incident cases.
+
+### 5.14.5 RAG Knowledge Quality
+
+The quality of RAG output depends on the quality and coverage of retrieved playbooks. The current knowledge base covers three attack types (Brute Force, DDoS, Port Scan). Expanding to more attack families would improve explanation completeness for diverse alert types.
+
+### 5.14.6 SHAP Approximation
+
+SHAP values for tree-based models are exact (TreeExplainer). For Logistic Regression, LinearExplainer provides model-agnostic approximations. The KernelExplainer fallback is computationally expensive and is used only when no more specific explainer is available. Instance-level SHAP for the inference endpoint uses a small background sample, which trades precision for responsiveness.
 
 ## 5.15 Summary
 
-This chapter presented the evaluation methodology and current fixture-based results. The IDS pipeline produces model metrics, confusion matrices, and feature importance artifacts. The LLM/RAG pipeline produces explanation comparisons, rubric scores, RAG summaries, and incident case studies. The current results validate the research workflow and provide a foundation for full dataset experiments in the final thesis.
+This chapter presented the experimental design and evaluation results for the LLM-assisted IDS/SOC prototype. The IDS pipeline was evaluated on two benchmark datasets (UNSW-NB15 and CICIDS2017) across five model types with standardized metric export, confusion matrices, and explainability artifacts. The LLM/RAG explanation workflow was evaluated across three explanation modes using a six-criterion rubric, with supporting RAG summary and incident case study reports.
+
+Key findings include: (1) feature scaling substantially improves linear models on UNSW-NB15 (F1 from 0.6757 to 0.7647), (2) tree-based models achieve near-perfect scores on CICIDS2017 random splits but this should be interpreted cautiously, (3) SHAP-based instance explanations connect model decisions to alert evidence with ranked feature contributions, and (4) the RAG-assisted explanation mode achieves higher groundedness scores by incorporating retrieved playbook context.
+
+The evaluation framework is reproducible: every artifact can be traced to a specific CLI command, and all metrics, figures, and SHAP explanations are exported to versioned output directories. The system is ready for final experiments with real LLM providers and human expert evaluation.
