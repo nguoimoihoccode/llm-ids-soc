@@ -1,19 +1,57 @@
 from app.models import Alert, Explanation, ExplanationComparison, ExplanationComparisonItem
 from app.config import settings
 from app.services.rag_service import retrieve_context
+from app.services.llm_provider import get_llm_provider
+
+
+def _build_provider():
+    return get_llm_provider(
+        provider=settings.llm_provider,
+        openai_api_key=settings.openai_api_key or None,
+        openai_model=settings.openai_model,
+        gemini_api_key=settings.gemini_api_key or None,
+        gemini_model=settings.gemini_model,
+        ollama_model=settings.ollama_model,
+        ollama_base_url=settings.ollama_base_url,
+    )
+
+
+def _explanation_prompt(alert: Alert, context: str, mode: str) -> str:
+    context_block = ""
+    if context and context.strip():
+        context_block = f"\nRelevant security playbook context:\n{context}\n"
+
+    prompt = (
+        f"You are a SOC analyst assistant. Explain the following IDS alert in plain language "
+        f"that a junior analyst can understand.\n\n"
+        f"Alert ID: {alert.alert_id}\n"
+        f"Attack type: {alert.attack_type}\n"
+        f"Source IP: {alert.src_ip} → Destination IP: {alert.dst_ip}\n"
+        f"Severity: {alert.severity}\n"
+        f"Confidence: {alert.confidence:.0%}\n"
+        f"Evidence features: {', '.join(alert.top_features)}\n"
+        f"MITRE ATT&CK: {alert.mitre_technique}\n"
+        f"Triage priority: {alert.triage_priority}\n"
+        f"Detection reason: {alert.reason}\n"
+        f"{context_block}"
+        f"\nProvide:\n"
+        f"1. Summary: what happened in 1-2 sentences.\n"
+        f"2. Why it is suspicious.\n"
+        f"3. Recommended response actions.\n"
+    )
+    return prompt
 
 
 def explain_alert(alert: Alert) -> Explanation:
-    # Tao phan giai thich doc duoc boi con nguoi, co context playbook kem theo.
+    provider = _build_provider()
     context = retrieve_context(alert.attack_type)
+    prompt = _explanation_prompt(alert, context, "rag")
+    llm_output = provider.generate(prompt)
+
     return Explanation(
         alert_id=alert.alert_id,
-        provider=settings.llm_provider,
-        summary=(
-            f"Alert {alert.alert_id} indicates possible {alert.attack_type} activity "
-            f"from {alert.src_ip} to {alert.dst_ip} with {alert.confidence:.0%} confidence. "
-            f"Mapped to {alert.mitre_technique} and triaged as {alert.triage_priority}."
-        ),
+        provider=provider.provider_name,
+        summary=llm_output,
         why_suspicious=alert.reason,
         evidence_features=alert.top_features,
         mitre_technique=alert.mitre_technique,
@@ -24,33 +62,39 @@ def explain_alert(alert: Alert) -> Explanation:
 
 
 def compare_explanation_modes(alert: Alert) -> ExplanationComparison:
-    # Cho xem cung 1 alert se duoc trinh bay khac nhau nhu the nao khi co/khong co RAG.
+    provider = _build_provider()
     rag_context = retrieve_context(alert.attack_type)
+
+    template_summary = (
+        f"{alert.attack_type} alert from {alert.src_ip} to {alert.dst_ip} "
+        f"with {alert.severity} severity and {alert.confidence:.0%} confidence."
+    )
+
+    no_rag_prompt = _explanation_prompt(alert, "", "no-rag")
+    no_rag_summary = provider.generate(no_rag_prompt)
+
+    rag_prompt = _explanation_prompt(alert, rag_context, "rag")
+    rag_summary = provider.generate(rag_prompt)
+
     return ExplanationComparison(
         alert_id=alert.alert_id,
         comparisons=[
             ExplanationComparisonItem(
                 mode="template",
                 uses_rag=False,
-                summary=f"{alert.attack_type} alert with {alert.severity} severity and {alert.confidence:.0%} confidence.",
+                summary=template_summary,
                 knowledge_context="",
             ),
             ExplanationComparisonItem(
                 mode="llm_without_rag",
                 uses_rag=False,
-                summary=(
-                    f"Possible {alert.attack_type} from {alert.src_ip} to {alert.dst_ip}. "
-                    f"Evidence features: {', '.join(alert.top_features)}. MITRE mapping: {alert.mitre_technique}."
-                ),
+                summary=no_rag_summary,
                 knowledge_context="",
             ),
             ExplanationComparisonItem(
                 mode="llm_with_rag",
                 uses_rag=True,
-                summary=(
-                    f"Possible {alert.attack_type} from {alert.src_ip} to {alert.dst_ip}, triaged as {alert.triage_priority}. "
-                    f"Grounded by retrieved playbook context and evidence features: {', '.join(alert.top_features)}."
-                ),
+                summary=rag_summary,
                 knowledge_context=rag_context,
             ),
         ],
@@ -58,7 +102,6 @@ def compare_explanation_modes(alert: Alert) -> ExplanationComparison:
 
 
 def _recommendations(attack_type: str) -> list[str]:
-    # Khuyen nghi xu ly duoc chon theo loai attack, de khop nghiep vu SOC.
     if attack_type == "Brute Force":
         return [
             "Block or rate-limit the source IP.",
