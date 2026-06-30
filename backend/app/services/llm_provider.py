@@ -78,8 +78,8 @@ class OllamaProvider(LLMProvider):
 
     def generate(self, prompt: str) -> str:
         try:
-            import requests
-            response = requests.post(
+            import httpx
+            response = httpx.post(
                 f"{self._base_url}/api/generate",
                 json={"model": self._model, "prompt": prompt, "stream": False},
                 timeout=120,

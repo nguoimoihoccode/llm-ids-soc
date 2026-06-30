@@ -13,4 +13,7 @@ matplotlib==3.7.5
 # Optional LLM providers (uncomment as needed)
 # openai==1.68.0
 # google-generativeai==0.8.3
-# requests==2.32.3
+
+# Optional vector search (uncomment for semantic RAG)
+# sentence-transformers==3.3.1
+# faiss-cpu==1.9.0
