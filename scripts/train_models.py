@@ -22,6 +22,7 @@ def main() -> None:
     parser.add_argument("--metrics-dir", required=True, type=Path)
     parser.add_argument("--models-dir", required=True, type=Path)
     parser.add_argument("--models", default="logistic_regression,decision_tree,random_forest")
+    parser.add_argument("--tuning-dir", type=Path)
     args = parser.parse_args()
 
     model_names = [name.strip() for name in args.models.split(",") if name.strip()]
@@ -34,10 +35,11 @@ def main() -> None:
             args.metrics_dir,
             args.models_dir,
             model_names,
+            args.tuning_dir,
         )
     elif args.input:
         # Che do cu: train va evaluate tren cung mot file, phu hop demo nhanh.
-        results = train_models_from_csv(args.dataset_id, args.input, args.metrics_dir, args.models_dir, model_names)
+        results = train_models_from_csv(args.dataset_id, args.input, args.metrics_dir, args.models_dir, model_names, args.tuning_dir)
     else:
         parser.error("Provide either --input or both --train-input and --test-input.")
     print(json.dumps(results, indent=2))

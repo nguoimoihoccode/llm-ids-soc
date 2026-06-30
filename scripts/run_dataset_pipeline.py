@@ -29,6 +29,7 @@ def main() -> None:
     parser.add_argument("--models", default="logistic_regression,decision_tree,random_forest")
     parser.add_argument("--test-size", default=0.2, type=float)
     parser.add_argument("--random-state", default=42, type=int)
+    parser.add_argument("--tuning-dir", type=Path)
     args = parser.parse_args()
 
     output_dir = args.output_dir
@@ -99,6 +100,7 @@ def main() -> None:
         metrics_dir=metrics_dir,
         models_dir=models_dir,
         model_names=model_names,
+        tuning_dir=args.tuning_dir,
     )
 
     report_path = output_dir / "pipeline-report.md"
