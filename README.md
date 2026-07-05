@@ -364,22 +364,4 @@ LLM/RAG explanation evaluation is designed around a rubric:
 
 See `docs/evaluation-plan.md` for more detail.
 
-## Defense Materials
-
-- Demo script: `docs/demo-script.md`.
-- Defense Q&A notes: `docs/defense-qa.md`.
-- Architecture diagrams: `docs/architecture-diagram.md`.
-- Thesis proposal draft: `docs/thesis-proposal.md`.
-- Thesis outline: `docs/thesis-outline.md`.
-- Thesis abstract: `docs/thesis/abstract.md`.
-- Chapter 1 draft: `docs/thesis/chapter-01-introduction.md`.
-- Chapter 2 draft: `docs/thesis/chapter-02-background-related-work.md`.
-- Chapter 3 draft: `docs/thesis/chapter-03-proposed-system.md`.
-- Chapter 4 draft: `docs/thesis/chapter-04-implementation.md`.
-- Chapter 5 draft: `docs/thesis/chapter-05-experiments-evaluation.md`.
-- Chapter 6 draft: `docs/thesis/chapter-06-discussion.md`.
-- Chapter 7 draft: `docs/thesis/chapter-07-conclusion-future-work.md`.
-- Six-month roadmap: `docs/roadmap-6-months.md`.
-- Development direction: `docs/development-direction.md`.
-- Current progress summary: `docs/progress-summary.md`.
 
