@@ -26,85 +26,47 @@ The thesis focus is not to let an LLM decide whether traffic is malicious. The I
 The system is designed as a clear SOC-style pipeline: **ML/IDS detects suspicious activity, while RAG/LLM explains the alert and supports analyst triage**.
 
 ```mermaid
-flowchart LR
-    subgraph D[Data Sources]
-        A1[Sample Network Events]
-        A2[UNSW-NB15 Style CSV]
-        A3[CICIDS2017 Planned Benchmark]
+flowchart TB
+    subgraph Data
+        A[Sample events / UNSW-NB15 / CICIDS2017]
     end
 
-    subgraph P[Preprocessing And Feature Engineering]
-        B1[CSV Loading]
-        B2[Missing And Infinite Value Handling]
-        B3[Categorical Encoding]
-        B4[Processed Feature Matrix]
+    subgraph Detection["Detection (IDS / ML)"]
+        B[Preprocess features]
+        C[Rule-based demo + supervised models]
+        D[Alerts: severity, MITRE, triage]
+        B --> C --> D
     end
 
-    subgraph M[IDS And Machine Learning Layer]
-        C1[Rule-Based Demo Detector]
-        C2[Logistic Regression]
-        C3[Decision Tree]
-        C4[Random Forest]
-        C5[Metrics And Confusion Matrices]
+    subgraph Explanation["Explanation (RAG / LLM)"]
+        E[Security playbooks]
+        F[Retrieve context]
+        G[Explain alert: template / no-RAG / RAG]
+        E --> F --> G
     end
 
-    subgraph I[Alert Intelligence Layer]
-        D1[Security Alert]
-        D2[Severity And Confidence]
-        D3[Top Evidence Features]
-        D4[MITRE ATT&CK Mapping]
-        D5[Triage Priority]
+    subgraph App["SOC application"]
+        H[FastAPI backend]
+        I[React dashboard]
+        H --> I
     end
 
-    subgraph K[Knowledge And RAG Layer]
-        E1[Local Security Playbooks]
-        E2[Relevant Context Retrieval]
+    subgraph Artifacts["Research artifacts"]
+        J[Metrics, figures, SHAP]
+        K[LLM rubric & case studies]
     end
 
-    subgraph L[LLM Explanation Layer]
-        F1[Template Explanation]
-        F2[LLM Without RAG]
-        F3[LLM With RAG]
-        F4[Grounded Response Guidance]
-    end
-
-    subgraph O[SOC Outputs]
-        G1[FastAPI Backend]
-        G2[React SOC Dashboard]
-        G3[Model Comparison CSV]
-        G4[Feature Importance Reports]
-        G5[LLM Rubric Scores]
-        G6[Incident Case Studies]
-    end
-
-    A1 --> P
-    A2 --> P
-    A3 -. future .-> P
-    P --> M
-    M --> I
-    I --> L
-    E1 --> E2 --> L
-    L --> O
-    M --> G3
-    M --> G4
-    L --> G5
-    I --> G6
-    G1 --> G2
-
-    classDef data fill:#0f172a,stroke:#38bdf8,color:#e0f2fe
-    classDef process fill:#1e1b4b,stroke:#818cf8,color:#eef2ff
-    classDef ml fill:#052e16,stroke:#22c55e,color:#dcfce7
-    classDef alert fill:#451a03,stroke:#f59e0b,color:#fffbeb
-    classDef rag fill:#3b0764,stroke:#c084fc,color:#faf5ff
-    classDef output fill:#111827,stroke:#f472b6,color:#fdf2f8
-
-    class A1,A2,A3 data
-    class B1,B2,B3,B4 process
-    class C1,C2,C3,C4,C5 ml
-    class D1,D2,D3,D4,D5 alert
-    class E1,E2,F1,F2,F3,F4 rag
-    class G1,G2,G3,G4,G5,G6 output
+    A --> B
+    D --> G
+    D --> H
+    G --> H
+    C --> J
+    G --> K
 ```
+
+**Read top to bottom:** data is preprocessed and detected; alerts are explained with playbooks; the dashboard shows both. Metrics and LLM scores are research exports, not the live detector.
+
+Detailed diagrams (evaluation pipeline, analyst workflow) are in [`docs/architecture-diagram.md`](docs/architecture-diagram.md).
 
 ### Component Map
 
@@ -135,7 +97,7 @@ flowchart LR
 - **Backend**: Python, FastAPI, Pydantic, pandas, scikit-learn, joblib, pytest.
 - **Frontend**: React, TypeScript, Vite.
 - **ML/IDS**: rule-based baseline plus baseline supervised models for research comparison.
-- **LLM/RAG prototype**: local template explanation and markdown playbook retrieval. External LLM providers can be added later.
+- **LLM/RAG**: local template, optional OpenAI / Gemini / Ollama, and markdown playbook retrieval (TF-IDF or embeddings).
 - **Research outputs**: CSV, JSON metrics, markdown reports, and figure exports.
 
 ## Quick Start
